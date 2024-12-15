@@ -1,0 +1,122 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.properties
+
+# Gradle
+.gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+.gradle-cache/
+*.gradle
+*.gradle.kts
+gradle-app.setting
+gradlew
+gradlew.bat
+gradle-wrapper.jar
+gradle-wrapper.properties
+
+# STS (Spring Tool Suite)
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+.idea_modules/
+*.sublime-workspace
+*.sublime-project
+
+# Eclipse
+.metadata/
+*.checkstyle
+*.classpath
+*.project
+.settings/
+bin/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# Visual Studio Code
+.vscode/
+.history/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.swn
+*.lock
+*~
+
+# Log files
+*.log
+*.log.*
+logs/
+log/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.swp~
+*.swo
+*.swn
+*.sav
+
+# Application-specific files
+.env
+*.env
+*.key
+*.pem
+*.crt
+*.p12
+*.json
+
+# Test outputs
+/test-output/
+
+# Coverage files
+coverage/
+.jacoco/
+
+# Lombok config file
+.lombok.config
+
+# Swagger Codegen
+.swagger-codegen/
+
+# Additional files
+HELP.md
+README.md.bak
+debug.log
+
+
+# Configuration files
+application.properties
+application.yml
