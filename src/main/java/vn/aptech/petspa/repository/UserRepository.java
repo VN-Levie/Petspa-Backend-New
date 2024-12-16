@@ -13,6 +13,8 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(@Param("email") @NonNull String email);
 
+    boolean existsByEmailAndIsVerifiedTrue(String email);
+
     @Modifying
     @Query("UPDATE User u SET u.deleted = true WHERE u.id = :id")
     void softDeleteById(@Param("id") Long id);

@@ -19,16 +19,16 @@
     <logger name="org.eclipse.jetty" level="WARN" /> <!-- Jetty -->
 
     <!-- Spring Boot Loggers -->
-    <logger name="org.springframework.boot" level="ERROR" />
+    <!-- <logger name="org.springframework.boot" level="ERROR" />
     <logger name="org.springframework.orm" level="ERROR" />
     <logger name="org.springframework.data" level="ERROR" />
     <logger name="org.springframework.security" level="ERROR" />
     <logger name="org.springframework" level="ERROR" />
-    <logger name="org.hibernate" level="ERROR" />
+    <logger name="org.hibernate" level="ERROR" /> -->
 
 
     <!-- Tomcat -->
-    <logger name="org.apache.catalina.startup.DigesterFactory" level="WARN" />
+    <!-- <logger name="org.apache.catalina.startup.DigesterFactory" level="WARN" /> -->
 
     <!-- Hibernate Logs (JPA) - Uncomment to enable SQL logs -->
     <logger name="org.hibernate.SQL" level="WARN" />

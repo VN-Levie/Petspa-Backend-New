@@ -28,7 +28,8 @@ public class JwtUtil {
     // constance
     public static final String ACCESS_TOKEN = "access_token";
     public static final String REFRESH_TOKEN = "refresh_token";
-    public static final String OTP_TOEKN = "otp_token";
+    public static final String OTP_TOKEN = "otp_token";
+    public static final String VERIFICATION_TOKEN = "verification_token";
 
     /**
      * Generate token theo type: access_token, refresh_token, otp
@@ -41,7 +42,7 @@ public class JwtUtil {
         expiryDate = switch (type) {
             case ACCESS_TOKEN -> new Date(now.getTime() + jwtExpirationInMs);
             case REFRESH_TOKEN -> new Date(now.getTime() + refreshTokenExpirationInMs);
-            case OTP_TOEKN -> new Date(now.getTime() + otpExpirationInMs);
+            case OTP_TOKEN -> new Date(now.getTime() + otpExpirationInMs);
             default -> throw new IllegalArgumentException("Invalid token type: " + type);
         };
 
@@ -102,6 +103,19 @@ public class JwtUtil {
 
     private Claims getClaims(String token) {
         return Jwts.parserBuilder().setSigningKey(secret).build().parseClaimsJws(token).getBody();
+    }
+
+    public String generateVerificationToken(String email) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + otpExpirationInMs);
+
+        return Jwts.builder()
+                .setSubject(email)
+                .setIssuedAt(now)
+                .claim("type", VERIFICATION_TOKEN)
+                .setExpiration(expiryDate)
+                .signWith(secret, SignatureAlgorithm.HS256)
+                .compact();
     }
 
 }

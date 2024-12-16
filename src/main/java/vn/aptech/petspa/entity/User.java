@@ -15,6 +15,9 @@ import java.util.Set;
 @AllArgsConstructor
 public class User extends BaseEntity {
 
+    @NotBlank(message = "Name is required")
+    private String name;
+
     @NotBlank(message = "Email is required")
     private String email;
 
@@ -25,4 +28,8 @@ public class User extends BaseEntity {
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
     private Set<String> roles;
+
+    @Column(name = "is_verified")
+    private boolean isVerified = false;
+
 }
