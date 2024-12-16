@@ -317,4 +317,20 @@ public class AuthController {
                 .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "Invalid OTP.", null));
     }
 
+    // check is user verified
+    @GetMapping("/is-verified")
+    public ResponseEntity<ApiResponse> isVerified(@RequestParam String email) {
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "User not found.", null));
+        }
+
+        if (user.isVerified()) {
+            return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, "Email is verified.", null));
+        }
+
+        return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, "Email is not verified.", null));
+    }
+
 }
