@@ -31,6 +31,8 @@ import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.validation.Valid;
 import vn.aptech.petspa.dto.LoginDTO;
 import vn.aptech.petspa.dto.RegisterDTO;
+import vn.aptech.petspa.dto.UserDTO;
+import vn.aptech.petspa.dto.VerifyDTO;
 import vn.aptech.petspa.entity.User;
 import vn.aptech.petspa.repository.UserRepository;
 import vn.aptech.petspa.service.EmailService;
@@ -71,17 +73,36 @@ public class AuthController {
     public ResponseEntity<ApiResponse> login(@Valid @RequestBody LoginDTO loginDTO) {
         try {
             User user = userRepository.findByEmail(loginDTO.getEmail()).orElse(null);
-            if (user == null || !user.isVerified()) {
+            if (user == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Email is not verified!", null));
+                        .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Invalid email or password!", null));
             }
 
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword()));
+            try {
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword()));
+            } catch (Exception e) {
+                throw new BadCredentialsException("Invalid email or password", e);
+            }
+
+            if (user != null && !user.isVerified()) {
+                VerifyDTO verifyDTO = new VerifyDTO(user.getId(), user.getEmail(), user.isVerified());
+                String mess = "Email is not verified! Please verify before login.";
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, mess, verifyDTO));
+            }
             UserDetails userDetails = userDetailsService.loadUserByUsername(loginDTO.getEmail());
             String jwtToken = jwtUtil.generateToken(userDetails, JwtUtil.ACCESS_TOKEN);
+            String refreshToken = jwtUtil.generateToken(userDetails, JwtUtil.REFRESH_TOKEN);
+            UserDTO userDTO = new UserDTO();
+            userDTO.setEmail(user.getEmail());
+            userDTO.setName(user.getName());
+            userDTO.setRole(user.getRoles().iterator().next());
+            userDTO.setVerified(user.isVerified());
+            userDTO.setToken(jwtToken);
+            userDTO.setRefreshToken(refreshToken);
 
-            ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Login successfully!", jwtToken);
+            ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Login successfully!", userDTO);
             return ResponseEntity.ok(response);
 
         } catch (BadCredentialsException e) {
@@ -96,6 +117,48 @@ public class AuthController {
         }
     }
 
+    // login bằng token
+    @PostMapping("/login-token")
+    public ResponseEntity<ApiResponse> loginToken(@RequestHeader("Authorization") String token) {
+        try {
+            token = token.replace("Bearer ", "");
+            System.out.println("Token: " + token);
+            String email = jwtUtil.extractEmail(token);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+            if (jwtUtil.validateToken(token, userDetails)) {
+                User user = userRepository.findByEmail(email).orElse(null);
+                if (user == null) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Invalid token!", null));
+                }
+                if (user != null && !user.isVerified()) {
+                    VerifyDTO verifyDTO = new VerifyDTO(user.getId(), user.getEmail(), user.isVerified());
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Email is not verified!",
+                                    verifyDTO));
+                }
+                String jwtToken = jwtUtil.generateToken(userDetails, JwtUtil.ACCESS_TOKEN);
+                String refreshToken = jwtUtil.generateToken(userDetails, JwtUtil.REFRESH_TOKEN);
+                UserDTO userDTO = new UserDTO();
+                userDTO.setEmail(user.getEmail());
+                userDTO.setName(user.getName());
+                userDTO.setRole(user.getRoles().iterator().next());
+                userDTO.setVerified(user.isVerified());
+                userDTO.setToken(jwtToken);
+                userDTO.setRefreshToken(refreshToken);
+
+                ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Login successfully!", userDTO);
+                return ResponseEntity.ok(response);
+            }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Invalid token", null));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Invalid token.", null));
+        }
+    }
+
     @GetMapping("/logout")
     public ResponseEntity<ApiResponse> logout(@RequestHeader("Authorization") String token) {
         // 1. (Tuỳ chọn) Blacklist token tại server nếu cần
@@ -105,9 +168,10 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/refresh-token")
+    @PostMapping("/refresh-token")
     public ResponseEntity<ApiResponse> refreshToken(@RequestHeader("Authorization") String refreshToken) {
         try {
+            refreshToken = refreshToken.replace("Bearer ", "");
             // Giải mã và kiểm tra refresh token
             String username = jwtUtil.extractEmail(refreshToken);
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -176,10 +240,16 @@ public class AuthController {
             String email = registerDTO.getEmail();
 
             // Kiểm tra xem email đã tồn tại chưa thông qua UserRepository
-            boolean userExists = userRepository.findByEmail(email).isPresent();
-            if (userExists) {
+            User user = userRepository.findByEmail(email).orElse(null);
+            if (user != null && user.isVerified()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "Email is already registered!", null));
+            } else {
+                if (user != null && !user.isVerified()) {
+                    VerifyDTO verifyDTO = new VerifyDTO(user.getId(), email, user.isVerified());
+                    return ResponseEntity
+                            .ok(new ApiResponse(ApiResponse.STATUS_OK, "Email is not verified!", verifyDTO));
+                }
             }
 
             // Generate OTP (6-digit numeric)
@@ -198,9 +268,11 @@ public class AuthController {
             String encodedPassword = passwordEncoder.encode(registerDTO.getPassword());
             User newUser = new User(registerDTO.getName(), email, encodedPassword, Set.of("USER"), false);
             userRepository.save(newUser);
+            VerifyDTO verifyDTO = new VerifyDTO(newUser.getId(), email, newUser.isVerified());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ApiResponse(ApiResponse.STATUS_CREATED,
+                            "Registration successful. Please check your email.", verifyDTO));
 
-            return ResponseEntity.ok(
-                    new ApiResponse(ApiResponse.STATUS_OK, "Registration successful. Please check your email.", null));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -244,9 +316,9 @@ public class AuthController {
         // Gửi email
         String verificationLink = "http://localhost:8090/auth/verify?token=" + verificationToken;
         emailService.sendOtpMail(email, "Account Verification", otp, verificationLink);
-
+        VerifyDTO verifyDTO = new VerifyDTO(user.getId(), email, user.isVerified());
         return ResponseEntity.ok(
-                new ApiResponse(ApiResponse.STATUS_OK, "OTP sent successfully. Please check your email.", null));
+                new ApiResponse(ApiResponse.STATUS_OK, "OTP sent successfully. Please check your email.", verifyDTO));
     }
 
     @GetMapping("/verify")
@@ -290,19 +362,20 @@ public class AuthController {
 
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse> verifyOtp(@RequestParam String email, @RequestParam String otp) {
+
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "User not found.", null));
+        }
+        String mess = user.isVerified() ? "OTP verified successfully!" : "Email already verified.";
+        VerifyDTO verifyDTO = new VerifyDTO(user.getId(), email, user.isVerified());
+        if (user.isVerified()) {
+            return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, mess, verifyDTO));
+        }
         String cachedOtp = otpCache.getIfPresent(email);
         if (cachedOtp != null && cachedOtp.equals(otp)) {
             // Tìm user trong database
-            User user = userRepository.findByEmail(email).orElse(null);
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "User not found.", null));
-            }
-
-            // Kiểm tra trạng thái xác thực
-            if (user.isVerified()) {
-                return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, "Email already verified.", null));
-            }
 
             // Cập nhật trạng thái đã xác thực
             user.setVerified(true);
@@ -310,8 +383,8 @@ public class AuthController {
 
             // Xóa OTP khỏi cache
             otpCache.invalidate(email);
-
-            return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, "OTP verified successfully!", null));
+            verifyDTO = new VerifyDTO(email, user.isVerified());
+            return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, mess, verifyDTO));
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "Invalid OTP.", null));
@@ -325,12 +398,58 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "User not found.", null));
         }
+        String mess = user.isVerified() ? "Email is verified." : "Email is not verified.";
+        VerifyDTO verifyDTO = new VerifyDTO(user.getId(), email, user.isVerified());
+        return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, mess, verifyDTO));
 
-        if (user.isVerified()) {
-            return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, "Email is verified.", null));
+    }
+
+    // update email and resend otp
+    @PostMapping("/update-email")
+    public ResponseEntity<ApiResponse> updateEmail(@RequestBody VerifyDTO verifyDTO) {
+        String newEmail = verifyDTO.getEmail();
+
+        User user = userRepository.findById(verifyDTO.getUserId()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "User not found.", null));
         }
 
-        return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, "Email is not verified.", null));
+        if (user.isVerified()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "Email is already verified.", null));
+        }
+
+        // kiểm tra email đã tồn tại chưa
+        User existingUser = userRepository.findByEmail(newEmail).orElse(null);
+        if (existingUser != null && existingUser.getId() != user.getId()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "This email is already registered.", null));
+        }
+
+        // check email cũ và email mới giống nhau
+        if (user.getEmail().equals(newEmail)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST,
+                            "New email must be different from the old one.", null));
+        }
+
+        user.setEmail(newEmail);
+        userRepository.save(user);
+        // Generate OTP (6-digit numeric)
+        Random random = new Random();
+        String otp = String.format("%06d", random.nextInt(1000000)); // Tạo số từ 0 đến 999999
+        String verificationToken = jwtUtil.generateVerificationToken(newEmail);
+
+        // Lưu OTP vào cache
+        otpCache.put(newEmail, otp);
+
+        // Gửi email
+        String verificationLink = "http://localhost:8090/auth/verify?token=" + verificationToken;
+        emailService.sendOtpMail(newEmail, "Account Verification", otp, verificationLink);
+        verifyDTO = new VerifyDTO(user.getId(), newEmail, user.isVerified());
+        return ResponseEntity.ok(
+                new ApiResponse(ApiResponse.STATUS_OK, "OTP sent successfully. Please check your email.", verifyDTO));
     }
 
 }

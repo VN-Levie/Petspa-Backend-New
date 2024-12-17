@@ -11,6 +11,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 public class SecurityConfig {
@@ -23,26 +26,28 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers(
-                            "/search-place/**",
-                            "/get-coordinates/**",
-                            "/get-address/**",
-                            "/swagger-ui/**",
-                            "/v3/api-docs/**",
-                            "/api-docs/**",
-                            "/api-docs/swagger-config",
-                            "/swagger-ui.html")
-                            .permitAll(); // Cho phép truy cập không cần xác thực
-                    auth.requestMatchers("/auth/**").permitAll(); // Cho phép truy cập không cần xác thực
-                    auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
-                    auth.requestMatchers("/api/manager/**").hasRole("MANAGER");
-                    auth.requestMatchers("/api/staff/**").hasRole("STAFF");
-                    auth.anyRequest().authenticated();
-                })
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http
+            .cors(cors -> cors.disable()) // Bật CORS
+            .csrf(csrf -> csrf.disable()) // Tắt CSRF
+            .authorizeHttpRequests(auth -> {
+                auth.requestMatchers(
+                        "/search-place/**",
+                        "/get-coordinates/**",
+                        "/get-address/**",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/api-docs/**",
+                        "/api-docs/swagger-config",
+                        "/swagger-ui.html")
+                        .permitAll(); // Cho phép truy cập không cần xác thực
+                auth.requestMatchers("/auth/**").permitAll(); // Cho phép truy cập không cần xác thực
+                auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
+                auth.requestMatchers("/api/manager/**").hasRole("MANAGER");
+                auth.requestMatchers("/api/staff/**").hasRole("STAFF");
+                auth.anyRequest().authenticated();
+            })
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -57,5 +62,18 @@ public class SecurityConfig {
         return configuration.getAuthenticationManager();
     }
 
-    
+    // Cấu hình CORS
+    @Bean
+    public CorsFilter corsFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.addAllowedOriginPattern("*"); // Cho phép tất cả origin
+        config.addAllowedMethod("*");        // Cho phép tất cả phương thức (GET, POST, PUT, DELETE, ...)
+        config.addAllowedHeader("*");        // Cho phép tất cả header
+        config.setAllowCredentials(true);    // Cho phép gửi cookies (nếu cần)
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+
+        return new CorsFilter(source);
+    }
 }

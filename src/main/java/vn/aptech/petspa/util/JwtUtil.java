@@ -76,6 +76,8 @@ public class JwtUtil {
                 .getSubject();
     }
 
+    
+
     public boolean validateToken(String token, String requiredType) {
         try {
             var claims = Jwts.parserBuilder().setSigningKey(secret).build().parseClaimsJws(token).getBody();
