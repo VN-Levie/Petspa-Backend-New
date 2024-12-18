@@ -265,9 +265,8 @@ public class AuthController {
             emailService.sendOtpMail(email, "Account Verification", otp, verificationLink);
             // Mã hóa mật khẩu và lưu user mới
             String encodedPassword = passwordEncoder.encode(registerDTO.getPassword());
-            vn.aptech.petspa.entity.Role role = new vn.aptech.petspa.entity.Role("USER");
+
             User newUser = new User(registerDTO.getName(), email, encodedPassword, Set.of("USER"), false);
-            // User newUser = new User(registerDTO.getName(), email, encodedPassword,  false);
             userRepository.save(newUser);
             VerifyDTO verifyDTO = new VerifyDTO(newUser.getId(), email, newUser.isVerified());
             return ResponseEntity.status(HttpStatus.CREATED)
