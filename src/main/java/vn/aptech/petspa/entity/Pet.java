@@ -20,8 +20,9 @@ public class Pet extends BaseEntity {
     @Column(nullable = false)
     private String description;
 
+    
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private User user;
 
     // Ảnh đại diện thú cưng
     @Column(name = "avatar_url", nullable = true)

@@ -86,7 +86,7 @@ public class UserPetController {
             throw new IllegalArgumentException("Pet name already exists");
         }
 
-        petService.addPet(user.getId(), petDTO, file);
+        petService.addPet(user, petDTO, file);
 
         return ResponseEntity.ok(new ApiResponse("Add pet successfully"));
     }

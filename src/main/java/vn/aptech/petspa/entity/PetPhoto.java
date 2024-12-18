@@ -23,5 +23,5 @@ public class PetPhoto extends BaseEntity {
 
     // Người tải ảnh lên
     @Column(name = "uploaded_by", nullable = false)
-    private Long uploadedBy;
+    private User uploadedBy;
 }
