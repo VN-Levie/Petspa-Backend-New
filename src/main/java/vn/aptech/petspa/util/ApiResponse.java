@@ -1,9 +1,13 @@
 package vn.aptech.petspa.util;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import vn.aptech.petspa.dto.VerifyDTO;
+import vn.aptech.petspa.entity.Pet;
 
 @Data
 @AllArgsConstructor
@@ -19,7 +23,11 @@ public class ApiResponse {
 
     private int status;
     private String message;
-    private Object data; // Bạn có thể thay đổi thành kiểu dữ liệu phù hợp với ứng dụng
+    private Object data;
+    private int currentPage;
+    private int pageSize;
+    private long totalElements;
+    private int totalPages;
 
     // constructor
     public ApiResponse(int status, String message) {
@@ -34,7 +42,22 @@ public class ApiResponse {
 
     public static ResponseEntity<ApiResponse> responsebadRequest(String msg) {
         return ResponseEntity.badRequest()
-                .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, msg, null));
+                .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, msg));
+    }
+
+    public ApiResponse(int statusOk, String string, Object data) {
+        this.status = statusOk;
+        this.message = string;
+        this.data = data;
+    }
+
+    public ApiResponse(String string, List<Pet> content, int number, int size, long totalElements, int totalPages) {
+        this.message = string;
+        this.data = content;
+        this.currentPage = number;
+        this.pageSize = size;
+        this.totalElements = totalElements;
+        this.totalPages = totalPages;
     }
 
 }

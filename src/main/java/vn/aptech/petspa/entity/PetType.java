@@ -18,7 +18,4 @@ public class PetType extends BaseEntity {
     @Column(nullable = false)
     private String description;
 
-    // Ảnh minh họa cho loại thú cưng
-    @Column(name = "icon_url", nullable = true)
-    private String iconUrl;
 }

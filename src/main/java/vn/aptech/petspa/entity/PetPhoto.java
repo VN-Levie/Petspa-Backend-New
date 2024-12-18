@@ -19,7 +19,7 @@ public class PetPhoto extends BaseEntity {
 
     // URL ảnh
     @Column(name = "photo_url", nullable = false)
-    private String photoUrl;
+    private String url;
 
     // Người tải ảnh lên
     @Column(name = "uploaded_by", nullable = false)

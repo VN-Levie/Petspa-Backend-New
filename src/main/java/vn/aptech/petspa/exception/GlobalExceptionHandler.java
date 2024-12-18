@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse> handleIllegalArgumentException(IllegalArgumentException e) {
         logger.warn("IllegalArgumentException: {}", e.getMessage());
         return ResponseEntity.badRequest()
-                .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, e.getMessage(), null));
+                .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, e.getMessage()));
     }
 
     // Xử lý JsonProcessingException
@@ -30,7 +30,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse> handleJsonProcessingException(JsonProcessingException e) {
         logger.warn("JsonProcessingException: {}", e.getMessage());
         return ResponseEntity.badRequest()
-                .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "Invalid JSON format", null));
+                .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "Invalid JSON format"));
     }
 
     // Xử lý RuntimeException
@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse> handleRuntimeException(RuntimeException e) {
         logger.error("RuntimeException: {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "Internal server error", null));
+                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, e.getMessage()));
     }
 
     // Xử lý JwtException
@@ -46,7 +46,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse> handleJwtException(JwtException e) {
         logger.warn("JwtException: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Unauthorized", null));
+                .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Unauthorized"));
     }
 
     // Xử lý ngoại lệ chung
@@ -54,6 +54,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse> handleGenericException(Exception e) {
         logger.error("Unhandled exception: {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "Something went wrong", null));
+                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "Something went wrong"));
     }
 }

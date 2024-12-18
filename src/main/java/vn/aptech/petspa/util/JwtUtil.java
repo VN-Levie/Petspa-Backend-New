@@ -132,13 +132,13 @@ public class JwtUtil {
     // UNAUTHORIZED
     public ResponseEntity<ApiResponse> responseUnauthorized() {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Unauthorized", null));
+                .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Unauthorized"));
     }
 
     public ResponseEntity<ApiResponse> responseInternalServerError(Exception e) {
         e.printStackTrace();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "Something went wrong", null));
+                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "Something went wrong"));
     }
 
 }

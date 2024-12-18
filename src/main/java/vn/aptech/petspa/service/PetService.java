@@ -1,27 +1,48 @@
 package vn.aptech.petspa.service;
 
+import java.io.IOException;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import vn.aptech.petspa.dto.PetDTO;
+import vn.aptech.petspa.dto.PetTypeDTO;
 import vn.aptech.petspa.entity.Pet;
+import vn.aptech.petspa.entity.PetHealth;
+import vn.aptech.petspa.entity.PetPhoto;
+import vn.aptech.petspa.entity.PetType;
+import vn.aptech.petspa.repository.PetHealthRepository;
+import vn.aptech.petspa.repository.PetPhotoRepository;
 import vn.aptech.petspa.repository.PetRepository;
-
-import java.io.IOException;
-import java.util.List;
+import vn.aptech.petspa.repository.PetTypeRepository;
 
 @Service
 public class PetService {
 
     private final PetRepository petRepository;
 
+    private final PetTypeRepository petTypeRepository;
+    private final PetHealthRepository petHealthRepository;
+    private final PetPhotoRepository petPhotoRepository;
+
     private final FileService fileService;
 
     @Autowired
-    public PetService(PetRepository petRepository, FileService fileService) {
+    public PetService(
+            PetRepository petRepository,
+            FileService fileService,
+            PetTypeRepository petTypeRepository,
+            PetHealthRepository petHealthRepository,
+            PetPhotoRepository petPhotoRepository) {
         this.petRepository = petRepository;
         this.fileService = fileService;
+        this.petTypeRepository = petTypeRepository;
+        this.petHealthRepository = petHealthRepository;
+        this.petPhotoRepository = petPhotoRepository;
     }
 
     public List<Pet> fetchUserPets(Long userId) {
@@ -57,7 +78,23 @@ public class PetService {
             pet.setUserId(userId);
             pet.setAvatarUrl(fileUrl);
 
+            PetHealth petHealth = new PetHealth();
+            petHealth.setPet(pet);
+            petHealth.setWeight(petDTO.getWeight());
+            petHealth.setHeight(petDTO.getHeight());
+
+            pet.setPetType(petTypeRepository.findById(petDTO.getPetTypeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Pet type not found")));
+
+            PetPhoto petPhoto = new PetPhoto();
+            petPhoto.setPet(pet);
+            petPhoto.setUrl(fileUrl);
+            petPhoto.setUploadedBy(userId);
+
+            // Lưu Pet
             petRepository.save(pet);
+            petHealthRepository.save(petHealth);
+            petPhotoRepository.save(petPhoto);
         } catch (IOException e) {
             throw new RuntimeException("Failed to save file: " + e.getMessage());
         } catch (Exception e) {
@@ -66,7 +103,41 @@ public class PetService {
     }
 
     public boolean checkPetNameExists(Long id, String name, Long long1) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'checkPetNameExists'");
+        return petRepository.existsByNameAndUserIdAndDeletedFalse(name, id);
+    }
+
+    // Phương thức phân trang pets
+    public Page<Pet> retrieveAllPets(Pageable pageable) {
+        return petRepository.findAll(pageable);
+    }
+
+    public List<PetType> retrievePetTypes() {
+        return petTypeRepository.findAll();
+    }
+
+    public Page<Pet> retrievePetsByType(String type, Pageable pageable) {
+        return petRepository.findByPetType_NameAndDeletedFalse(type, pageable);
+    }
+
+    public void addPetType(PetTypeDTO petTypeDTO) {
+        PetType petType = new PetType();
+        petType.setName(petTypeDTO.getName());
+        petType.setDescription(petTypeDTO.getDescription());
+        petTypeRepository.save(petType);
+    }
+
+    public void deletePetType(Long id) {
+        PetType petType = petTypeRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("PetType not found"));
+        petType.softDelete();
+        petTypeRepository.save(petType);
+    }
+
+    public void updatePetType(PetTypeDTO petTypeDTO) {
+        PetType petType = petTypeRepository.findById(petTypeDTO.getId())
+                .orElseThrow(() -> new IllegalArgumentException("PetType not found"));
+        petType.setName(petTypeDTO.getName());
+        petType.setDescription(petTypeDTO.getDescription());
+        petTypeRepository.save(petType);
     }
 }

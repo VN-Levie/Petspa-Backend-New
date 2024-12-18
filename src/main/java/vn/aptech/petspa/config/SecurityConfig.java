@@ -41,9 +41,9 @@ public class SecurityConfig {
                         "/swagger-ui.html")
                         .permitAll(); // Cho phép truy cập không cần xác thực
                 auth.requestMatchers("/auth/**").permitAll(); // Cho phép truy cập không cần xác thực
-                auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
-                auth.requestMatchers("/api/manager/**").hasRole("MANAGER");
-                auth.requestMatchers("/api/staff/**").hasRole("STAFF");
+                auth.requestMatchers("/admin/**").hasRole("ADMIN");
+                // auth.requestMatchers("/api/manager/**").hasRole("MANAGER");
+                // auth.requestMatchers("/api/staff/**").hasRole("STAFF");
                 auth.anyRequest().authenticated();
             })
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

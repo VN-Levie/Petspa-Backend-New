@@ -52,16 +52,12 @@ public class UserPetController {
     // lấy danh sách pet của user
     @GetMapping("/list")
     public ResponseEntity<ApiResponse> listUserPet(@RequestHeader("Authorization") String token) {
-        try {
-            String email = jwtUtil.extractEmail(token);
-            User user = userRepository.findByEmail(email).orElse(null);
-            List<Pet> pets = petService.fetchUserPets(user.getId());
-            return ResponseEntity.ok(new ApiResponse(pets));
-        } catch (JwtException e) {
-            return jwtUtil.responseUnauthorized();
-        } catch (Exception e) {
-            return jwtUtil.responseInternalServerError(e);
-        }
+
+        String email = jwtUtil.extractEmail(token);
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        List<Pet> pets = petService.fetchUserPets(user.getId());
+        return ResponseEntity.ok(new ApiResponse(pets));
+
     }
 
     // thêm pet cho user
@@ -71,35 +67,27 @@ public class UserPetController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("petDTO") String petDTOJson) throws JsonProcessingException {
 
-        // Parse JSON string thành PetDTO
         ObjectMapper objectMapper = new ObjectMapper();
         PetDTO petDTO = objectMapper.readValue(petDTOJson, PetDTO.class);
 
-        // Lấy email từ JWT
         String email = jwtUtil.extractEmail(token);
 
-        // Kiểm tra pet type
         if (!petTypeRepository.existsById(petDTO.getPetTypeId())) {
             throw new IllegalArgumentException("Pet type does not exist");
         }
 
-        // Kiểm tra file upload
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File is required");
         }
 
-        // Lấy thông tin user từ email
         User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Kiểm tra tên pet
         if (petService.checkPetNameExists(user.getId(), petDTO.getName(), petDTO.getPetTypeId())) {
             throw new IllegalArgumentException("Pet name already exists");
         }
 
-        // Gọi service để thêm pet
         petService.addPet(user.getId(), petDTO, file);
 
-        // Trả về kết quả thành công
         return ResponseEntity.ok(new ApiResponse("Add pet successfully"));
     }
 
