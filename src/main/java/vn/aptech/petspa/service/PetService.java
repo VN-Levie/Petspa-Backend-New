@@ -21,30 +21,21 @@ import vn.aptech.petspa.repository.PetPhotoRepository;
 import vn.aptech.petspa.repository.PetRepository;
 import vn.aptech.petspa.repository.PetTypeRepository;
 import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class PetService {
 
-    private final PetRepository petRepository;
-
-    private final PetTypeRepository petTypeRepository;
-    private final PetHealthRepository petHealthRepository;
-    private final PetPhotoRepository petPhotoRepository;
-
-    private final FileService fileService;
+    @Autowired
+    private PetRepository petRepository;
+    @Autowired
+    private PetTypeRepository petTypeRepository;
+    @Autowired
+    private PetHealthRepository petHealthRepository;
+    @Autowired
+    private PetPhotoRepository petPhotoRepository;
 
     @Autowired
-    public PetService(
-            PetRepository petRepository,
-            FileService fileService,
-            PetTypeRepository petTypeRepository,
-            PetHealthRepository petHealthRepository,
-            PetPhotoRepository petPhotoRepository) {
-        this.petRepository = petRepository;
-        this.fileService = fileService;
-        this.petTypeRepository = petTypeRepository;
-        this.petHealthRepository = petHealthRepository;
-        this.petPhotoRepository = petPhotoRepository;
-    }
+    private FileService fileService;
 
     public List<Pet> fetchUserPets(Long userId) {
         // Trả về danh sách Pet chưa bị xóa
@@ -56,8 +47,6 @@ public class PetService {
         return petRepository.findByUserId(userId);
     }
 
-
-
     @Transactional
     public void addPet(User user, PetDTO petDTO, MultipartFile file) {
         try {
@@ -68,11 +57,11 @@ public class PetService {
             if (!fileService.isImage(file.getInputStream(), file.getOriginalFilename())) {
                 throw new IllegalArgumentException("Invalid image format.");
             }
-    
+
             // Lưu file và lấy URL
             String uploadDir = "uploads/pets";
             String fileUrl = fileService.uploadFile(file, uploadDir);
-    
+
             // Tạo Pet entity
             Pet pet = new Pet();
             pet.setName(petDTO.getName());
@@ -81,32 +70,30 @@ public class PetService {
             pet.setAvatarUrl(fileUrl);
             pet.setPetType(petTypeRepository.findById(petDTO.getPetTypeId())
                     .orElseThrow(() -> new IllegalArgumentException("Pet type not found")));
-    
+
             // Lưu Pet vào DB
             petRepository.save(pet);
-    
+
             // Tạo và lưu PetHealth
             PetHealth petHealth = new PetHealth();
             petHealth.setPet(pet);
             petHealth.setWeight(petDTO.getWeight());
             petHealth.setHeight(petDTO.getHeight());
             petHealthRepository.save(petHealth);
-    
+
             // Tạo và lưu PetPhoto
             PetPhoto petPhoto = new PetPhoto();
             petPhoto.setPet(pet);
             petPhoto.setUrl(fileUrl);
             petPhoto.setUploadedBy(user);
             petPhotoRepository.save(petPhoto);
-    
+
         } catch (IOException e) {
             throw new RuntimeException("Failed to save file: " + e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException("Failed to add pet: " + e.getMessage());
         }
     }
-    
-    
 
     public boolean checkPetNameExists(Long id, String name, Long long1) {
         return petRepository.existsByNameAndUserIdAndDeletedFalse(name, id);

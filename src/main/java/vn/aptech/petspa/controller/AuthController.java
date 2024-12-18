@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import javax.management.relation.Role;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,7 +100,7 @@ public class AuthController {
             UserDTO userDTO = new UserDTO();
             userDTO.setEmail(user.getEmail());
             userDTO.setName(user.getName());
-            userDTO.setRole(user.getRoles().iterator().next());
+            // userDTO.setRole(user.getRole().getName());
             userDTO.setVerified(user.isVerified());
             userDTO.setToken(jwtToken);
             userDTO.setRefreshToken(refreshToken);
@@ -143,7 +145,7 @@ public class AuthController {
                 UserDTO userDTO = new UserDTO();
                 userDTO.setEmail(user.getEmail());
                 userDTO.setName(user.getName());
-                userDTO.setRole(user.getRoles().iterator().next());
+                // userDTO.setRole(user.getRole().getName());
                 userDTO.setVerified(user.isVerified());
                 userDTO.setToken(jwtToken);
                 userDTO.setRefreshToken(refreshToken);
@@ -263,7 +265,9 @@ public class AuthController {
             emailService.sendOtpMail(email, "Account Verification", otp, verificationLink);
             // Mã hóa mật khẩu và lưu user mới
             String encodedPassword = passwordEncoder.encode(registerDTO.getPassword());
+            vn.aptech.petspa.entity.Role role = new vn.aptech.petspa.entity.Role("USER");
             User newUser = new User(registerDTO.getName(), email, encodedPassword, Set.of("USER"), false);
+            // User newUser = new User(registerDTO.getName(), email, encodedPassword,  false);
             userRepository.save(newUser);
             VerifyDTO verifyDTO = new VerifyDTO(newUser.getId(), email, newUser.isVerified());
             return ResponseEntity.status(HttpStatus.CREATED)
