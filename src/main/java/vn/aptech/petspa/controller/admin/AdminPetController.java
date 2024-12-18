@@ -46,6 +46,7 @@ public class AdminPetController {
 
     @GetMapping("/pets/all")
     public ResponseEntity<ApiResponse> listAllPets(
+            @RequestHeader("Authorization") String token,
             @RequestParam(defaultValue = "0") int page, // Trang mặc định là 0
             @RequestParam(defaultValue = "10") int size // Kích thước mặc định là 10
     ) {

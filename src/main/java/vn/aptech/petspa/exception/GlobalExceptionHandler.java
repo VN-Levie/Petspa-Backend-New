@@ -8,10 +8,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.jsonwebtoken.JwtException;
+import io.swagger.v3.oas.annotations.Hidden;
 import vn.aptech.petspa.util.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@Hidden
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -22,7 +24,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse> handleIllegalArgumentException(IllegalArgumentException e) {
         logger.warn("IllegalArgumentException: {}", e.getMessage());
         return ResponseEntity.badRequest()
-                .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, e.getMessage()));
+                .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST));
     }
 
     // Xử lý JsonProcessingException
@@ -38,7 +40,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse> handleRuntimeException(RuntimeException e) {
         logger.error("RuntimeException: {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, e.getMessage()));
+                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR));
     }
 
     // Xử lý JwtException
@@ -54,6 +56,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse> handleGenericException(Exception e) {
         logger.error("Unhandled exception: {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "Something went wrong", e));
+                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "Something went wrong"));
     }
 }
