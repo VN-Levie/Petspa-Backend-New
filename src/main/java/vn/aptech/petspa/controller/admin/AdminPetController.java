@@ -29,6 +29,8 @@ import vn.aptech.petspa.repository.UserRepository;
 import vn.aptech.petspa.service.PetService;
 import vn.aptech.petspa.util.ApiResponse;
 import vn.aptech.petspa.util.JwtUtil;
+import vn.aptech.petspa.util.PagedApiResponse;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -50,7 +52,7 @@ public class AdminPetController {
         Pageable pageable = PageRequest.of(page, size); // Tạo Pageable object
         Page<Pet> petPage = petService.retrieveAllPets(pageable); // Gọi service với pageable
 
-        return ResponseEntity.ok(new ApiResponse(
+        return ResponseEntity.ok(new PagedApiResponse(
                 "Successfully retrieved pets",
                 petPage.getContent(), // Danh sách pets
                 petPage.getNumber(), // Trang hiện tại
@@ -60,7 +62,7 @@ public class AdminPetController {
         ));
     }
 
-    //get pet by type
+    // get pet by type
     @GetMapping("/pets")
     public ResponseEntity<ApiResponse> listPetsByType(
             @RequestParam(defaultValue = "0") int page, // Trang mặc định là 0
@@ -70,7 +72,7 @@ public class AdminPetController {
         Pageable pageable = PageRequest.of(page, size); // Tạo Pageable object
         Page<Pet> petPage = petService.retrievePetsByType(type, pageable); // Gọi service với pageable
 
-        return ResponseEntity.ok(new ApiResponse(
+        return ResponseEntity.ok(new PagedApiResponse(
                 "Successfully retrieved pets",
                 petPage.getContent(), // Danh sách pets
                 petPage.getNumber(), // Trang hiện tại
@@ -80,28 +82,27 @@ public class AdminPetController {
         ));
     }
 
-
-    //get pet type
+    // get pet type
     @GetMapping("/pet-types")
     public ResponseEntity<ApiResponse> listPetTypes() {
         return ResponseEntity.ok(new ApiResponse(petService.retrievePetTypes()));
     }
 
-    //add pet type
+    // add pet type
     @PostMapping("/pet-type")
     public ResponseEntity<ApiResponse> addPetType(@RequestBody PetTypeDTO petTypeDTO) {
         petService.addPetType(petTypeDTO);
         return ResponseEntity.ok(new ApiResponse("Successfully added pet type"));
     }
 
-    //delete pet type
+    // delete pet type
     @PostMapping("/pet-type/delete")
     public ResponseEntity<ApiResponse> deletePetType(@RequestParam Long id) {
         petService.deletePetType(id);
         return ResponseEntity.ok(new ApiResponse("Successfully deleted pet type"));
     }
 
-    //update pet type
+    // update pet type
     @PostMapping("/pet-type/update")
     public ResponseEntity<ApiResponse> updatePetType(@RequestBody PetTypeDTO petTypeDTO) {
         petService.updatePetType(petTypeDTO);
