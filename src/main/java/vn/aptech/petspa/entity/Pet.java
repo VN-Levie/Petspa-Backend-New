@@ -20,9 +20,8 @@ public class Pet extends BaseEntity {
     @Column(nullable = false)
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false) // user_id trong bảng Pet
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     // Ảnh đại diện thú cưng
     @Column(name = "avatar_url", nullable = true)
