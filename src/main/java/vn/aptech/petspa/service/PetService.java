@@ -100,8 +100,10 @@ public class PetService {
     }
 
     // Phương thức phân trang pets
-    public Page<Pet> retrieveAllPets(Pageable pageable) {
-        return petRepository.findAll(pageable);
+    @Transactional
+    public Page<PetDTO> retrieveAllPets(Pageable pageable) {
+        Page<Pet> pets = petRepository.findAll(pageable);
+        return pets.map(pet -> new PetDTO(pet));
     }
 
     public List<PetType> retrievePetTypes() {

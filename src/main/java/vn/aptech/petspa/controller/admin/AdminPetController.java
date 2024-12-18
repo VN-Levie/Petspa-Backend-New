@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.JwtException;
+import vn.aptech.petspa.dto.PetDTO;
 import vn.aptech.petspa.dto.PetTypeDTO;
 import vn.aptech.petspa.entity.Pet;
 import vn.aptech.petspa.entity.User;
@@ -46,20 +47,24 @@ public class AdminPetController {
 
     @GetMapping("/pets/all")
     public ResponseEntity<ApiResponse> listAllPets(
-            @RequestHeader("Authorization") String token,
             @RequestParam(defaultValue = "0") int page, // Trang mặc định là 0
             @RequestParam(defaultValue = "10") int size // Kích thước mặc định là 10
     ) {
+        if (page < 0 || size <= 0) {
+            return ApiResponse.badRequest("Invalid page or size values");
+        }
+        size = Math.min(size, 100); // Giới hạn kích thước trang tối đa là 100
         Pageable pageable = PageRequest.of(page, size); // Tạo Pageable object
-        Page<Pet> petPage = petService.retrieveAllPets(pageable); // Gọi service với pageable
-
+        Page<PetDTO> petDTOPage = petService.retrieveAllPets(pageable); // Gọi service với pageable
+        // Page<PetDTO> petDTOPage = petPage.map(pet -> new PetDTO(pet)); // Chuyển đổi
+        // từ Pet sang PetDTO
         return ResponseEntity.ok(new PagedApiResponse(
                 "Successfully retrieved pets",
-                petPage.getContent(), // Danh sách pets
-                petPage.getNumber(), // Trang hiện tại
-                petPage.getSize(), // Kích thước mỗi trang
-                petPage.getTotalElements(), // Tổng số bản ghi
-                petPage.getTotalPages() // Tổng số trang
+                petDTOPage.getContent(), // Danh sách pets
+                petDTOPage.getNumber(), // Trang hiện tại
+                petDTOPage.getSize(), // Kích thước mỗi trang
+                petDTOPage.getTotalElements(), // Tổng số bản ghi
+                petDTOPage.getTotalPages() // Tổng số trang
         ));
     }
 

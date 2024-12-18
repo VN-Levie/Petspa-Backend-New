@@ -1,8 +1,11 @@
 package vn.aptech.petspa.util;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import org.springframework.http.ResponseEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
 @AllArgsConstructor
 public class PagedApiResponse extends ApiResponse {
