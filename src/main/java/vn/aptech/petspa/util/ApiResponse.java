@@ -1,5 +1,7 @@
 package vn.aptech.petspa.util;
 
+import org.springframework.http.ResponseEntity;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -23,6 +25,16 @@ public class ApiResponse {
     public ApiResponse(int status, String message) {
         this.status = status;
         this.message = message;
+    }
+
+    public ApiResponse(Object data) {
+        this.status = STATUS_OK;
+        this.message = "Success";
+    }
+
+    public static ResponseEntity<ApiResponse> responsebadRequest(String msg) {
+        return ResponseEntity.badRequest()
+                .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, msg, null));
     }
 
 }

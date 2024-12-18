@@ -1,5 +1,6 @@
 package vn.aptech.petspa.controller;
 
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -121,7 +122,7 @@ public class AuthController {
     @PostMapping("/login-token")
     public ResponseEntity<ApiResponse> loginToken(@RequestHeader("Authorization") String token) {
         try {
-            token = token.replace("Bearer ", "");
+            token = jwtUtil.extractToken(token);
             System.out.println("Token: " + token);
             String email = jwtUtil.extractEmail(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
@@ -251,19 +252,15 @@ public class AuthController {
                             .ok(new ApiResponse(ApiResponse.STATUS_OK, "Email is not verified!", verifyDTO));
                 }
             }
-
             // Generate OTP (6-digit numeric)
             Random random = new Random();
             String otp = String.format("%06d", random.nextInt(1000000)); // Tạo số từ 0 đến 999999
             String verificationToken = jwtUtil.generateVerificationToken(email);
-
             // Lưu OTP vào cache
             otpCache.put(email, otp);
-
             // Gửi email
             String verificationLink = "http://localhost:8090/auth/verify?token=" + verificationToken;
             emailService.sendOtpMail(email, "Account Verification", otp, verificationLink);
-
             // Mã hóa mật khẩu và lưu user mới
             String encodedPassword = passwordEncoder.encode(registerDTO.getPassword());
             User newUser = new User(registerDTO.getName(), email, encodedPassword, Set.of("USER"), false);
@@ -272,7 +269,6 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new ApiResponse(ApiResponse.STATUS_CREATED,
                             "Registration successful. Please check your email.", verifyDTO));
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -282,7 +278,13 @@ public class AuthController {
     }
 
     @PostMapping("/resend-otp")
-    public ResponseEntity<ApiResponse> resendOtp(@RequestParam String email) {
+    public ResponseEntity<ApiResponse> resendOtp(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+        if (email == null || email.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "Email is required!", null));
+        }
+
         // Kiểm tra email đã tồn tại chưa
         User user = userRepository.findByEmail(email).orElse(null);
         if (user == null) {
@@ -361,33 +363,40 @@ public class AuthController {
     }
 
     @PostMapping("/verify-otp")
-    public ResponseEntity<ApiResponse> verifyOtp(@RequestParam String email, @RequestParam String otp) {
+    public ResponseEntity<ApiResponse> verifyOtp(@RequestBody Map<String, String> payload) {
 
-        User user = userRepository.findByEmail(email).orElse(null);
-        if (user == null) {
+        try {
+            String email = payload.get("email");
+            String otp = payload.get("otp");
+            User user = userRepository.findByEmail(email).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "User not found.", null));
+            }
+            String mess = user.isVerified() ? "OTP verified successfully!" : "Email already verified.";
+            VerifyDTO verifyDTO = new VerifyDTO(user.getId(), email, user.isVerified());
+            if (user.isVerified()) {
+                return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, mess, verifyDTO));
+            }
+            String cachedOtp = otpCache.getIfPresent(email);
+            if (cachedOtp != null && cachedOtp.equals(otp)) {
+                // Tìm user trong database
+
+                // Cập nhật trạng thái đã xác thực
+                user.setVerified(true);
+                userRepository.save(user);
+
+                // Xóa OTP khỏi cache
+                otpCache.invalidate(email);
+                verifyDTO = new VerifyDTO(email, user.isVerified());
+                return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, mess, verifyDTO));
+            }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "User not found.", null));
+                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "Invalid OTP.", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "An error occurred.", null));
         }
-        String mess = user.isVerified() ? "OTP verified successfully!" : "Email already verified.";
-        VerifyDTO verifyDTO = new VerifyDTO(user.getId(), email, user.isVerified());
-        if (user.isVerified()) {
-            return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, mess, verifyDTO));
-        }
-        String cachedOtp = otpCache.getIfPresent(email);
-        if (cachedOtp != null && cachedOtp.equals(otp)) {
-            // Tìm user trong database
-
-            // Cập nhật trạng thái đã xác thực
-            user.setVerified(true);
-            userRepository.save(user);
-
-            // Xóa OTP khỏi cache
-            otpCache.invalidate(email);
-            verifyDTO = new VerifyDTO(email, user.isVerified());
-            return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, mess, verifyDTO));
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "Invalid OTP.", null));
     }
 
     // check is user verified

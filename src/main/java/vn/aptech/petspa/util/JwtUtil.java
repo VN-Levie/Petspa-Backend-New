@@ -6,6 +6,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -65,6 +67,7 @@ public class JwtUtil {
      * Giải mã và lấy username từ token
      */
     public String extractEmail(String token) {
+        token = extractToken(token);
         if (token == null) {
             return null;
         }
@@ -75,8 +78,6 @@ public class JwtUtil {
                 .getBody()
                 .getSubject();
     }
-
-    
 
     public boolean validateToken(String token, String requiredType) {
         try {
@@ -118,6 +119,26 @@ public class JwtUtil {
                 .setExpiration(expiryDate)
                 .signWith(secret, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    // hàm trích xuất token ( token = token.replace("Bearer ", "");)
+    public String extractToken(String token) {
+        if (token == null) {
+            return null; // hoặc trả về giá trị mặc định
+        }
+        return token.replace("Bearer ", "");
+    }
+
+    // UNAUTHORIZED
+    public ResponseEntity<ApiResponse> responseUnauthorized() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Unauthorized", null));
+    }
+
+    public ResponseEntity<ApiResponse> responseInternalServerError(Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "Something went wrong", null));
     }
 
 }
