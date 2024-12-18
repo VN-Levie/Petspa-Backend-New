@@ -21,7 +21,7 @@ public class PetPhoto extends BaseEntity {
     @Column(name = "photo_url", nullable = false)
     private String url;
 
-    // Người tải ảnh lên
-    @Column(name = "uploaded_by", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "uploaded_by", nullable = false)
     private User uploadedBy;
 }

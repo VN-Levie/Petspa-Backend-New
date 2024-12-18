@@ -66,7 +66,7 @@ public class PetService {
             Pet pet = new Pet();
             pet.setName(petDTO.getName());
             pet.setDescription(petDTO.getDescription());
-            pet.setUserId(user.getId());
+            pet.setUser(user);
             pet.setAvatarUrl(fileUrl);
             pet.setPetType(petTypeRepository.findById(petDTO.getPetTypeId())
                     .orElseThrow(() -> new IllegalArgumentException("Pet type not found")));
