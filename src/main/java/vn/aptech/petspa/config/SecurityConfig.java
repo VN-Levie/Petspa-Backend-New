@@ -74,18 +74,18 @@ public class SecurityConfig {
         return configuration.getAuthenticationManager();
     }
 
-    // Cấu hình CORS
-    @Bean
-    public CorsFilter corsFilter() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.addAllowedOriginPattern("*"); // Cho phép tất cả origin
-        config.addAllowedMethod("*"); // Cho phép tất cả phương thức (GET, POST, PUT, DELETE, ...)
-        config.addAllowedHeader("*"); // Cho phép tất cả header
-        config.setAllowCredentials(true); // Cho phép gửi cookies (nếu cần)
+    // // Cấu hình CORS
+    // @Bean
+    // public CorsFilter corsFilter() {
+    //     CorsConfiguration config = new CorsConfiguration();
+    //     config.addAllowedOriginPattern("*"); // Cho phép tất cả origin
+    //     config.addAllowedMethod("*"); // Cho phép tất cả phương thức (GET, POST, PUT, DELETE, ...)
+    //     config.addAllowedHeader("*"); // Cho phép tất cả header
+    //     config.setAllowCredentials(true); // Cho phép gửi cookies (nếu cần)
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
+    //     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    //     source.registerCorsConfiguration("/**", config);
 
-        return new CorsFilter(source);
-    }
+    //     return new CorsFilter(source);
+    // }
 }

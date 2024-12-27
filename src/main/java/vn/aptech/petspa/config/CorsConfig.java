@@ -15,7 +15,7 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
                 registry.addMapping("/**") // Áp dụng cho mọi endpoint
-                        .allowedOrigins("http://localhost:3000") // Origin cho phép
+                        .allowedOrigins("*") // Origin cho phép
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Các phương thức cho phép
                         .allowedHeaders("*"); // Cho phép tất cả header
             }

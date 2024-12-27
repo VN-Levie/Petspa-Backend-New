@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "pets")
@@ -35,9 +36,9 @@ public class Pet extends BaseEntity {
 
     // Liên kết album ảnh của thú cưng
     @OneToMany(mappedBy = "pet", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<PetPhoto> photos;
+    private Set<PetPhoto> photos;
 
     // Liên kết album ảnh của thú cưng
     @OneToMany(mappedBy = "pet", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<PetHealth> healths;
+    private Set<PetHealth> healths;
 }
