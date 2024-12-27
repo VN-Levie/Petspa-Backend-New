@@ -1,14 +1,14 @@
 package vn.aptech.petspa.config;
 
 import vn.aptech.petspa.filter.JwtAuthenticationFilter;
+import vn.aptech.petspa.filter.RequestLoggingFilter;
 import vn.aptech.petspa.service.CustomUserDetailsService;
 
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,9 +17,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -30,7 +29,6 @@ public class SecurityConfig {
     @Autowired
     private CustomUserDetailsService customUserDetailsService;
 
-    @Autowired
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
@@ -38,30 +36,37 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.disable()) // Bật CORS
+                .cors(cors -> cors.disable()) // Tắt CORS
                 .csrf(csrf -> csrf.disable()) // Tắt CSRF
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(
-                            "/search-place/**",
-                            "/get-coordinates/**",
-                            "/get-address/**",
+                            "/",
                             "/swagger-ui/**",
                             "/v3/api-docs/**",
                             "/api-docs/**",
-                            "/api-docs/swagger-config",
-                            "/swagger-ui.html")
-                            .permitAll(); // Cho phép truy cập không cần xác thực
-                    auth.requestMatchers("/api/auth/**").permitAll(); // Cho phép truy cập không cần xác thực
+                            "/api/auth/**",
+                            "/uploads/**")
+                            .permitAll();
                     auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
-                    // auth.requestMatchers("/api/manager/**").hasRole("MANAGER");
-                    // auth.requestMatchers("/api/staff/**").hasRole("STAFF");
-                    auth.requestMatchers("/uploads/**").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(
+                        (request, response, authException) -> {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                        }));
 
         return http.build();
+    }
+
+    // Đăng ký RequestLoggingFilter với order thấp hơn
+    @Bean
+    public FilterRegistrationBean<RequestLoggingFilter> loggingFilterRegistration(RequestLoggingFilter filter) {
+        FilterRegistrationBean<RequestLoggingFilter> registrationBean = new FilterRegistrationBean<>();
+        registrationBean.setFilter(filter);
+        registrationBean.setOrder(Integer.MIN_VALUE); // Đảm bảo chạy trước tất cả
+        return registrationBean;
     }
 
     @Bean
@@ -74,18 +79,4 @@ public class SecurityConfig {
         return configuration.getAuthenticationManager();
     }
 
-    // // Cấu hình CORS
-    // @Bean
-    // public CorsFilter corsFilter() {
-    //     CorsConfiguration config = new CorsConfiguration();
-    //     config.addAllowedOriginPattern("*"); // Cho phép tất cả origin
-    //     config.addAllowedMethod("*"); // Cho phép tất cả phương thức (GET, POST, PUT, DELETE, ...)
-    //     config.addAllowedHeader("*"); // Cho phép tất cả header
-    //     config.setAllowCredentials(true); // Cho phép gửi cookies (nếu cần)
-
-    //     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    //     source.registerCorsConfiguration("/**", config);
-
-    //     return new CorsFilter(source);
-    // }
 }

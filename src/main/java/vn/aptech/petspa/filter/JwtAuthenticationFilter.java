@@ -5,7 +5,6 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -35,21 +34,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         final String jwt = getJwtFromRequest(request);
-        final String username;
-
+        String username = null;
         if (jwt != null) {
-            username = jwtUtil.extractEmail(jwt);
-
+            try {
+                username = jwtUtil.extractEmail(jwt);
+            } catch (Exception e) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
+                SecurityContextHolder.clearContext(); // Xóa context để chặn quyền
+                return; // Dừng filter
+            }
+            if (username != null) {
+                System.out.println("Username: " + username);
+            } else {
+                System.out.println("Username is null");
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
+                SecurityContextHolder.clearContext(); // Xóa context để chặn quyền
+                return;
+            }
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // Load UserDetails
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                // Validate token
                 if (jwtUtil.validateToken(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    logger.warn("JWT validation failed for user: " + username);
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
                 }
             }
         }
@@ -60,9 +72,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // Hàm lấy JWT từ header Authorization
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        return null;
+        return (bearerToken != null && bearerToken.startsWith("Bearer "))
+                ? bearerToken.substring(7)
+                : null;
     }
 }

@@ -2,6 +2,7 @@ package vn.aptech.petspa.dto;
 
 import lombok.Data;
 import vn.aptech.petspa.entity.Pet;
+import vn.aptech.petspa.entity.PetHealth;
 
 import java.util.List;
 
@@ -21,8 +22,9 @@ public class PetDTO {
         this.id = pet.getId();
         this.name = pet.getName();
         this.description = pet.getDescription();
-        this.height = pet.getHealths().get(0).getHeight();
-        this.weight = pet.getHealths().get(0).getWeight();
+        PetHealth firstHealth = pet.getHealths().iterator().next();
+        this.height = firstHealth.getHeight();
+        this.weight = firstHealth.getWeight();
         this.userId = pet.getUser().getId();
         this.avatarUrl = pet.getAvatarUrl();
         this.petTypeId = pet.getPetType().getId();

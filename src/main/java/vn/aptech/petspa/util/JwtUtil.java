@@ -67,16 +67,20 @@ public class JwtUtil {
      * Giải mã và lấy username từ token
      */
     public String extractEmail(String token) {
-        token = extractToken(token);
-        if (token == null) {
+        try {
+            token = extractToken(token);
+            if (token == null) {
+                return null;
+            }
+            return Jwts.parserBuilder()
+                    .setSigningKey(secret)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getSubject();
+        } catch (Exception e) {
             return null;
         }
-        return Jwts.parserBuilder()
-                .setSigningKey(secret)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
     }
 
     public boolean validateToken(String token, String requiredType) {
