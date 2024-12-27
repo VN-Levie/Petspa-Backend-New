@@ -43,10 +43,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.clearContext(); // Xóa context để chặn quyền
                 return; // Dừng filter
             }
-            if (username != null) {
-                System.out.println("Username: " + username);
-            } else {
-                System.out.println("Username is null");
+            if (username == null) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
                 SecurityContextHolder.clearContext(); // Xóa context để chặn quyền
                 return;
