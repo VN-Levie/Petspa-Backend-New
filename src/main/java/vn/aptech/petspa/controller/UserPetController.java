@@ -31,7 +31,7 @@ import vn.aptech.petspa.util.ApiResponse;
 import vn.aptech.petspa.util.JwtUtil;
 
 @RestController
-@RequestMapping("/user-pet") // Pet của user
+@RequestMapping("/api/user-pet") // Pet của user
 public class UserPetController {
 
     @Autowired

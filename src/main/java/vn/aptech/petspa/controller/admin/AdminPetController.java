@@ -37,7 +37,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 @RestController
-@RequestMapping("/admin/pet") // Pet của user
+@RequestMapping("/api/admin/pet") // Pet của user
 public class AdminPetController {
     @Autowired
     private UserRepository userRepository;

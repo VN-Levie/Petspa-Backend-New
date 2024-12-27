@@ -34,7 +34,7 @@ public class SecurityConfig {
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
-   
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -51,10 +51,11 @@ public class SecurityConfig {
                             "/api-docs/swagger-config",
                             "/swagger-ui.html")
                             .permitAll(); // Cho phép truy cập không cần xác thực
-                    auth.requestMatchers("/auth/**").permitAll(); // Cho phép truy cập không cần xác thực
-                    auth.requestMatchers("/admin/**").hasRole("ADMIN");
+                    auth.requestMatchers("/api/auth/**").permitAll(); // Cho phép truy cập không cần xác thực
+                    auth.requestMatchers("/api/admin/**").hasRole("ADMIN");
                     // auth.requestMatchers("/api/manager/**").hasRole("MANAGER");
                     // auth.requestMatchers("/api/staff/**").hasRole("STAFF");
+                    auth.requestMatchers("/uploads/**").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
