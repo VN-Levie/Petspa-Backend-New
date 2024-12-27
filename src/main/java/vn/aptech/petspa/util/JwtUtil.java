@@ -50,7 +50,7 @@ public class JwtUtil {
 
         // In thời gian hết hạn dưới dạng dd/MM/yyyy HH:mm:ss
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-        System.out.println("Thời gian hết hạn: " + dateFormat.format(expiryDate));
+        System.out.println("Thời gian hết hạn: " + dateFormat.format(expiryDate) + " (" + type + ")");
 
         // Trả về token
         return Jwts.builder()
