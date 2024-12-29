@@ -91,4 +91,46 @@ public class UserPetController {
         return ResponseEntity.ok(new ApiResponse("Add pet successfully"));
     }
 
+    //edit
+    @PostMapping(value = "/edit", consumes = { "multipart/form-data" })
+    public ResponseEntity<ApiResponse> editUserPet(
+            @RequestHeader("Authorization") String token,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("petDTO") String petDTOJson) throws JsonProcessingException {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        PetDTO petDTO = objectMapper.readValue(petDTOJson, PetDTO.class);
+
+        String email = jwtUtil.extractEmail(token);
+
+        if (!petTypeRepository.existsById(petDTO.getPetTypeId())) {
+            throw new IllegalArgumentException("Pet type does not exist");
+        }
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is required");
+        }
+
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (petService.checkPetNameExists(user.getId(), petDTO.getName(), petDTO.getPetTypeId())) {
+            throw new IllegalArgumentException("Pet name already exists");
+        }
+
+        petService.editPet(user, petDTO, file);
+
+        return ResponseEntity.ok(new ApiResponse("Edit pet successfully"));
+    }
+
+    //delete
+    @PostMapping("/delete")
+    public ResponseEntity<ApiResponse> deleteUserPet(@RequestHeader("Authorization") String token, @RequestBody PetDTO petDTO) {
+
+        String email = jwtUtil.extractEmail(token);
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        petService.deletePet(user, petDTO);
+
+        return ResponseEntity.ok(new ApiResponse("Delete pet successfully"));
+    }
 }
