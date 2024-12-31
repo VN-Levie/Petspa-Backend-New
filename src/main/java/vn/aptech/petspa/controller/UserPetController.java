@@ -54,6 +54,10 @@ public class UserPetController {
     public ResponseEntity<ApiResponse> listUserPet(@RequestHeader("Authorization") String token) {
 
         String email = jwtUtil.extractEmail(token);
+        Long userId = jwtUtil.extractUserId(token);
+        if (userId == 0) {
+            return ApiResponse.unauthorized("Invalid token");
+        }
         User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
         // List<Pet> pets = petService.fetchUserPets(user.getId());
         try {

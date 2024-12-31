@@ -36,7 +36,7 @@ public class JwtUtil {
     /**
      * Generate token theo type: access_token, refresh_token, otp
      */
-    public String generateToken(UserDetails userDetails, String type) {
+    public String generateToken(UserDetails userDetails, long userId, String type) {
         Date now = new Date();
         Date expiryDate;
 
@@ -55,6 +55,7 @@ public class JwtUtil {
         // Trả về token
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
+                .claim("userId", userId)
                 .claim("roles", userDetails.getAuthorities())
                 .claim("type", type)
                 .setIssuedAt(now)
@@ -80,6 +81,24 @@ public class JwtUtil {
                     .getSubject();
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    // extract userId from token
+    public long extractUserId(String token) {
+        try {
+            token = extractToken(token);
+            if (token == null) {
+                return 0;
+            }
+            return Jwts.parserBuilder()
+                    .setSigningKey(secret)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .get("userId", Long.class);
+        } catch (Exception e) {
+            return 0;
         }
     }
 

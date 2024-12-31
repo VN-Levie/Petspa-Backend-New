@@ -95,8 +95,8 @@ public class AuthController {
                         .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, mess, verifyDTO));
             }
             UserDetails userDetails = userDetailsService.loadUserByUsername(loginDTO.getEmail());
-            String jwtToken = jwtUtil.generateToken(userDetails, JwtUtil.ACCESS_TOKEN);
-            String refreshToken = jwtUtil.generateToken(userDetails, JwtUtil.REFRESH_TOKEN);
+            String jwtToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.ACCESS_TOKEN);
+            String refreshToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.REFRESH_TOKEN);
             UserDTO userDTO = new UserDTO();
             userDTO.setEmail(user.getEmail());
             userDTO.setName(user.getName());
@@ -140,8 +140,8 @@ public class AuthController {
                             .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Email is not verified!",
                                     verifyDTO));
                 }
-                String jwtToken = jwtUtil.generateToken(userDetails, JwtUtil.ACCESS_TOKEN);
-                String refreshToken = jwtUtil.generateToken(userDetails, JwtUtil.REFRESH_TOKEN);
+                String jwtToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.ACCESS_TOKEN);
+                String refreshToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.REFRESH_TOKEN);
                 UserDTO userDTO = new UserDTO();
                 userDTO.setEmail(user.getEmail());
                 userDTO.setName(user.getName());
@@ -180,8 +180,12 @@ public class AuthController {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
             if (jwtUtil.validateToken(refreshToken, userDetails)) {
+                User user = userRepository.findByEmail(username).orElse(null);
+                if (user == null) {
+                    throw new IllegalArgumentException("User not found");
+                }
                 // Tạo access token mới
-                String newAccessToken = jwtUtil.generateToken(userDetails, JwtUtil.ACCESS_TOKEN);
+                String newAccessToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.ACCESS_TOKEN);
                 ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Token refreshed successfully!",
                         newAccessToken);
                 return ResponseEntity.ok(response);
@@ -204,8 +208,21 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
+        User user = userRepository.findByEmail(email).orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "Email is not registered!", null));
+        }
+
+        if (user != null && !user.isVerified()) {
+            VerifyDTO verifyDTO = new VerifyDTO(user.getId(), email, user.isVerified());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "Email is not verified!", verifyDTO));
+        }
+
         // Tạo reset token
-        String resetToken = jwtUtil.generateToken(userDetails, JwtUtil.OTP_TOKEN);
+        String resetToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.OTP_TOKEN);
 
         // Gửi email chứa token (giả lập)
         logger.info("Reset token for {}: {}", email, resetToken);
