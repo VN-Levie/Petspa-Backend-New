@@ -95,6 +95,84 @@ public class PetService {
         }
     }
 
+    // editPet | petService.editPet(user, petDTO, file);
+    @Transactional
+    public void editPet(User user, PetDTO petDTO, MultipartFile file) {
+        try {
+            // Kiểm tra kích thước và định dạng file
+            if (file != null && !file.isEmpty()) {
+                if (!fileService.isImageSize(file.getSize())) {
+                    throw new IllegalArgumentException("File size exceeds the allowed limit.");
+                }
+                if (!fileService.isImage(file.getInputStream(), file.getOriginalFilename())) {
+                    throw new IllegalArgumentException("Invalid image format.");
+                }
+            }
+
+            // Lấy Pet từ DB
+            Pet pet = petRepository.findById(petDTO.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Pet not found"));
+
+            // Cập nhật thông tin Pet
+            pet.setName(petDTO.getName());
+            pet.setDescription(petDTO.getDescription());
+            pet.setPetType(petTypeRepository.findById(petDTO.getPetTypeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Pet type not found")));
+
+            // Nếu có file mới thì lưu file mới và cập nhật URL
+            if (file != null && !file.isEmpty()) {
+                String uploadDir = "uploads/pets";
+                String fileUrl = fileService.uploadFile(file, uploadDir);
+                pet.setAvatarUrl(fileUrl);
+            }
+
+            // Lưu Pet vào DB
+            petRepository.save(pet);
+
+            // Cập nhật thông tin PetHealth
+            PetHealth petHealth = petHealthRepository.findByPetId(pet.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Pet health not found"));
+            petHealth.setWeight(petDTO.getWeight());
+            petHealth.setHeight(petDTO.getHeight());
+            petHealthRepository.save(petHealth);
+
+            // Nếu có file mới thì lưu file mới và cập nhật URL
+            if (file != null && !file.isEmpty()) {
+                PetPhoto petPhoto = petPhotoRepository.findByPetId(pet.getId())
+                        .orElseThrow(() -> new IllegalArgumentException("Pet photo not found"));
+                petPhoto.setUrl(fileService.uploadFile(file, "uploads/pets"));
+                petPhotoRepository.save(petPhoto);
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save file: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to edit pet: " + e.getMessage());
+        }
+    }
+
+    // deletePet(user, petDTO);
+    @Transactional
+    public void deletePet(User user, PetDTO petDTO) {
+        try {
+            // Lấy Pet từ DB
+            Pet pet = petRepository.findById(petDTO.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Pet not found"));
+
+            // Kiểm tra xem user có quyền xóa pet không
+            if (!pet.getUser().getId().equals(user.getId())) {
+                throw new IllegalArgumentException("You do not have permission to delete this pet");
+            }
+
+            // Xóa Pet
+            pet.softDelete();
+            petRepository.save(pet);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete pet: " + e.getMessage());
+        }
+    }
+
     public boolean checkPetNameExists(Long id, String name, Long long1) {
         return petRepository.existsByNameAndUserIdAndDeletedFalse(name, id);
     }

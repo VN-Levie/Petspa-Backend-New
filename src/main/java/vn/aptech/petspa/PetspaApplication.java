@@ -32,8 +32,9 @@ public class PetspaApplication {
 			String port = environment.getProperty("server.port");
 			System.out.println(ANSI_GREEN + "Server running on " + ANSI_BLUE + "http://localhost:" + port + ANSI_RESET);
 			// show link to access swagger
-			System.out.println(ANSI_GREEN + "Swagger UI: " + ANSI_BLUE + "http://localhost:" + port + "/swagger-ui.html"
-					+ ANSI_RESET);
+			System.out.println(
+					ANSI_GREEN + "Swagger UI: " + ANSI_BLUE + "http://localhost:" + port + "/swagger-ui/index.html"
+							+ ANSI_RESET);
 			System.out.println(
 					ANSI_WHITE + "Press " + ANSI_YELLOW + "`ctrl + c`" + ANSI_WHITE + " to stop!" + ANSI_RESET);
 		};
