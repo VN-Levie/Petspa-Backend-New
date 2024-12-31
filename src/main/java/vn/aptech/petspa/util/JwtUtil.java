@@ -23,9 +23,9 @@ public class JwtUtil {
     private final SecretKey secret = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
 
     // Thời gian hết hạn
-    private final long jwtExpirationInMs = 3600000; // 1 hour
-    private final long refreshTokenExpirationInMs = jwtExpirationInMs * 24 * 90; // 90 days
-    private final long otpExpirationInMs = 600000; // 10 minutes
+    private final long jwtExpirationInMs = 3600000L; // 1 hour
+    private final long refreshTokenExpirationInMs = jwtExpirationInMs * 24 * 90L; // 90 days
+    private final long otpExpirationInMs = 600000L; // 10 minutes
 
     // constance
     public static final String ACCESS_TOKEN = "access_token";

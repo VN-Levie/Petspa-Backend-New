@@ -2,6 +2,7 @@ package vn.aptech.petspa.service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -40,6 +41,11 @@ public class PetService {
     public List<Pet> fetchUserPets(Long userId) {
         // Trả về danh sách Pet chưa bị xóa
         return petRepository.findByUserIdAndDeletedFalse(userId);
+    }
+
+    // @Transactional(readOnly = true)
+    public List<PetDTO> getUserPets(Long userId) {     
+        return petRepository.findPetsWithHealths(userId);
     }
 
     public List<Pet> retrievePetsForAdmin(Long userId) {

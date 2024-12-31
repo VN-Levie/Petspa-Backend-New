@@ -29,4 +29,15 @@ public class PetDTO {
         this.avatarUrl = pet.getAvatarUrl();
         this.petTypeId = pet.getPetType().getId();
     }
+
+    public PetDTO(Pet pet, PetHealth health) {
+        this.id = pet.getId();
+        this.name = pet.getName();
+        this.description = pet.getDescription();
+        this.height = health.getHeight();
+        this.weight = health.getWeight();
+        this.userId = pet.getUser().getId();
+        this.avatarUrl = pet.getAvatarUrl();
+        this.petTypeId = pet.getPetType().getId();
+    }
 }

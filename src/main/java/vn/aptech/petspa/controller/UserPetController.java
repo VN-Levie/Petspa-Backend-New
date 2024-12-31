@@ -55,8 +55,14 @@ public class UserPetController {
 
         String email = jwtUtil.extractEmail(token);
         User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
-        List<Pet> pets = petService.fetchUserPets(user.getId());
-        return ResponseEntity.ok(new ApiResponse(pets));
+        // List<Pet> pets = petService.fetchUserPets(user.getId());
+        try {
+            List<PetDTO> petDTOs = petService.getUserPets(user.getId());
+            return ResponseEntity.ok(new ApiResponse(petDTOs));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.badRequest(e.getMessage());
+        }
 
     }
 
@@ -91,7 +97,7 @@ public class UserPetController {
         return ResponseEntity.ok(new ApiResponse("Add pet successfully"));
     }
 
-    //edit
+    // edit
     @PostMapping(value = "/edit", consumes = { "multipart/form-data" })
     public ResponseEntity<ApiResponse> editUserPet(
             @RequestHeader("Authorization") String token,
@@ -122,9 +128,10 @@ public class UserPetController {
         return ResponseEntity.ok(new ApiResponse("Edit pet successfully"));
     }
 
-    //delete
+    // delete
     @PostMapping("/delete")
-    public ResponseEntity<ApiResponse> deleteUserPet(@RequestHeader("Authorization") String token, @RequestBody PetDTO petDTO) {
+    public ResponseEntity<ApiResponse> deleteUserPet(@RequestHeader("Authorization") String token,
+            @RequestBody PetDTO petDTO) {
 
         String email = jwtUtil.extractEmail(token);
         User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));

@@ -12,6 +12,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import vn.aptech.petspa.entity.User;
+import vn.aptech.petspa.repository.UserRepository;
 import vn.aptech.petspa.service.CustomUserDetailsService;
 import vn.aptech.petspa.util.JwtUtil;
 
@@ -28,6 +30,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
     private CustomUserDetailsService userDetailsService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
@@ -56,6 +61,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             userDetails, null, userDetails.getAuthorities());
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                    // Lưu vào request
+                    User user = userRepository.findByEmail(username)
+                            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                    request.setAttribute("user", user);
                 } else {
                     logger.warn("JWT validation failed for user: " + username);
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
