@@ -219,4 +219,9 @@ public class PetService {
         petType.setDescription(petTypeDTO.getDescription());
         petTypeRepository.save(petType);
     }
+
+    public Long countUserPet(Long userId) {
+       //count pet
+        return petRepository.countByUserIdAndDeletedFalse(userId);
+    }
 }

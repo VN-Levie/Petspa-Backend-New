@@ -39,6 +39,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         final String jwt = getJwtFromRequest(request);
+        if (jwt == null) {
+            // System.out.println("JWT is null");
+            // response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
+            // SecurityContextHolder.clearContext();
+            filterChain.doFilter(request, response);
+            return;
+        }
         String username = null;
         if (jwt != null) {
             try {
@@ -77,9 +84,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // Hàm lấy JWT từ header Authorization
     private String getJwtFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        return (bearerToken != null && bearerToken.startsWith("Bearer "))
-                ? bearerToken.substring(7)
-                : null;
+        try {
+            String bearerToken = request.getHeader("Authorization");
+            return (bearerToken != null && bearerToken.startsWith("Bearer "))
+                    ? bearerToken.substring(7)
+                    : null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

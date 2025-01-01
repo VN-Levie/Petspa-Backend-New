@@ -481,4 +481,31 @@ public class AuthController {
                 new ApiResponse(ApiResponse.STATUS_OK, "OTP sent successfully. Please check your email.", verifyDTO));
     }
 
+    // profile
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse> profile(@RequestHeader("Authorization") String token) {
+        try {
+            if (token == null || token.isEmpty()) {
+                return ApiResponse.unauthorized("Invalid token");
+            }
+            token = jwtUtil.extractToken(token);
+            String email = jwtUtil.extractEmail(token);
+            User user = userRepository.findByEmail(email).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "User not found.", null));
+            }
+            UserDTO userDTO = new UserDTO(user.getId());
+            userDTO.setEmail(user.getEmail());
+            userDTO.setName(user.getName());
+            userDTO.setVerified(user.isVerified());
+
+            userDTO.setRole(user.getRoles().stream().findFirst().orElse("User"));
+            return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, "Get profile successfully.", userDTO));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "An error occurred.", null));
+        }
+    }
+
 }

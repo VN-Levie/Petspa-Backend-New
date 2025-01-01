@@ -16,4 +16,8 @@ public class UserDTO {
     public UserDTO() {
     }
 
+    public UserDTO(Long id) {
+        this.id = id;
+    }
+
 }

@@ -29,4 +29,6 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
 
     @Query("SELECT new vn.aptech.petspa.dto.PetDTO(p, h) FROM Pet p JOIN p.healths h WHERE p.user.id = :userId")
     List<PetDTO> findPetsWithHealths(@Param("userId") Long userId);
+
+    Long countByUserIdAndDeletedFalse(Long userId);
 }

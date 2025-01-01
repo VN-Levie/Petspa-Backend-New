@@ -142,4 +142,23 @@ public class UserPetController {
 
         return ResponseEntity.ok(new ApiResponse("Delete pet successfully"));
     }
+
+    //count pet
+    @GetMapping("/count")
+    public ResponseEntity<ApiResponse> countUserPet(@RequestHeader("Authorization") String token) {
+
+        Long userId = jwtUtil.extractUserId(token);
+        if (userId == 0) {
+            return ApiResponse.unauthorized("Invalid token");
+        }
+
+        try {
+            Long count = petService.countUserPet(userId);
+            return ResponseEntity.ok(new ApiResponse(count));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.badRequest(e.getMessage());
+        }
+
+    }
 }
