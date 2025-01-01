@@ -103,7 +103,7 @@ public class UserPetController {
     @PostMapping(value = "/edit", consumes = { "multipart/form-data" })
     public ResponseEntity<ApiResponse> editUserPet(
             @RequestHeader("Authorization") String token,
-            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam("petDTO") String petDTOJson) throws JsonProcessingException {
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -115,17 +115,19 @@ public class UserPetController {
             throw new IllegalArgumentException("Pet type does not exist");
         }
 
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("File is required");
-        }
-
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (petService.checkPetNameExists(user.getId(), petDTO.getName(), petDTO.getPetTypeId())) {
             throw new IllegalArgumentException("Pet name already exists");
         }
 
-        petService.editPet(user, petDTO, file);
+        // Gọi service khác nếu không có file
+        if (file != null && !file.isEmpty()) {
+            petService.editPetWithAvatar(user, petDTO, file);
+        } else {
+            petService.editPetWithoutAvatar(user, petDTO);
+        }
 
         return ResponseEntity.ok(new ApiResponse("Edit pet successfully"));
     }
@@ -143,7 +145,7 @@ public class UserPetController {
         return ResponseEntity.ok(new ApiResponse("Delete pet successfully"));
     }
 
-    //count pet
+    // count pet
     @GetMapping("/count")
     public ResponseEntity<ApiResponse> countUserPet(@RequestHeader("Authorization") String token) {
 
@@ -160,5 +162,16 @@ public class UserPetController {
             return ApiResponse.badRequest(e.getMessage());
         }
 
+    }
+
+    // get pet type
+    @GetMapping("/pet-type")
+    public ResponseEntity<ApiResponse> getPetTypes() {
+        try {
+            return ResponseEntity.ok(new ApiResponse(petService.retrievePetTypes()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.badRequest(e.getMessage());
+        }
     }
 }

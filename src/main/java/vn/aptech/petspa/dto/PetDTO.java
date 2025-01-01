@@ -40,4 +40,8 @@ public class PetDTO {
         this.avatarUrl = pet.getAvatarUrl();
         this.petTypeId = pet.getPetType().getId();
     }
+
+    public PetDTO() {
+        // No-args constructor
+    }
 }

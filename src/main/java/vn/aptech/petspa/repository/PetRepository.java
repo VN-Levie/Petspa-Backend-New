@@ -1,6 +1,7 @@
 package vn.aptech.petspa.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ import org.springframework.lang.NonNull;
 
 import vn.aptech.petspa.dto.PetDTO;
 import vn.aptech.petspa.entity.Pet;
+import vn.aptech.petspa.entity.PetType;
 
 public interface PetRepository extends JpaRepository<Pet, Long> {
 
@@ -27,8 +29,10 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
 
     Page<Pet> findByPetType_NameAndDeletedFalse(String type, Pageable pageable);
 
-    @Query("SELECT new vn.aptech.petspa.dto.PetDTO(p, h) FROM Pet p JOIN p.healths h WHERE p.user.id = :userId")
+    @Query("SELECT new vn.aptech.petspa.dto.PetDTO(p, h) FROM Pet p JOIN p.healths h WHERE p.user.id = :userId and p.deleted = false")
     List<PetDTO> findPetsWithHealths(@Param("userId") Long userId);
 
     Long countByUserIdAndDeletedFalse(Long userId);
+
+    Optional<PetType> findByNameAndUserId(String name, Long id);
 }

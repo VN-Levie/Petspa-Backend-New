@@ -44,7 +44,7 @@ public class PetService {
     }
 
     // @Transactional(readOnly = true)
-    public List<PetDTO> getUserPets(Long userId) {     
+    public List<PetDTO> getUserPets(Long userId) {
         return petRepository.findPetsWithHealths(userId);
     }
 
@@ -105,19 +105,18 @@ public class PetService {
     @Transactional
     public void editPet(User user, PetDTO petDTO, MultipartFile file) {
         try {
-            // Kiểm tra kích thước và định dạng file
-            if (file != null && !file.isEmpty()) {
-                if (!fileService.isImageSize(file.getSize())) {
-                    throw new IllegalArgumentException("File size exceeds the allowed limit.");
-                }
-                if (!fileService.isImage(file.getInputStream(), file.getOriginalFilename())) {
-                    throw new IllegalArgumentException("Invalid image format.");
-                }
-            }
-
             // Lấy Pet từ DB
             Pet pet = petRepository.findById(petDTO.getId())
                     .orElseThrow(() -> new IllegalArgumentException("Pet not found"));
+
+            // Kiểm tra trùng tên (trừ trường hợp cùng id)
+            boolean petNameExists = petRepository.findByNameAndUserId(petDTO.getName(), user.getId())
+                    .filter(existingPet -> !existingPet.getId().equals(pet.getId()))
+                    .isPresent();
+
+            if (petNameExists) {
+                throw new IllegalArgumentException("Pet name already exists");
+            }
 
             // Cập nhật thông tin Pet
             pet.setName(petDTO.getName());
@@ -125,16 +124,22 @@ public class PetService {
             pet.setPetType(petTypeRepository.findById(petDTO.getPetTypeId())
                     .orElseThrow(() -> new IllegalArgumentException("Pet type not found")));
 
-            // Nếu có file mới thì lưu file mới và cập nhật URL
+            // Nếu có file mới thì xử lý và cập nhật avatar
             if (file != null && !file.isEmpty()) {
+                if (!fileService.isImageSize(file.getSize())) {
+                    throw new IllegalArgumentException("File size exceeds the allowed limit.");
+                }
+                if (!fileService.isImage(file.getInputStream(), file.getOriginalFilename())) {
+                    throw new IllegalArgumentException("Invalid image format.");
+                }
                 String uploadDir = "uploads/pets";
                 String fileUrl = fileService.uploadFile(file, uploadDir);
-                pet.setAvatarUrl(fileUrl);
+                pet.setAvatarUrl(fileUrl); // Cập nhật URL avatar mới
             }
 
             // Lưu Pet vào DB
             petRepository.save(pet);
-
+ 
             // Cập nhật thông tin PetHealth
             PetHealth petHealth = petHealthRepository.findByPetId(pet.getId())
                     .orElseThrow(() -> new IllegalArgumentException("Pet health not found"));
@@ -142,11 +147,11 @@ public class PetService {
             petHealth.setHeight(petDTO.getHeight());
             petHealthRepository.save(petHealth);
 
-            // Nếu có file mới thì lưu file mới và cập nhật URL
+            // Nếu có file mới thì cập nhật PetPhoto
             if (file != null && !file.isEmpty()) {
                 PetPhoto petPhoto = petPhotoRepository.findByPetId(pet.getId())
                         .orElseThrow(() -> new IllegalArgumentException("Pet photo not found"));
-                petPhoto.setUrl(fileService.uploadFile(file, "uploads/pets"));
+                petPhoto.setUrl(pet.getAvatarUrl());
                 petPhotoRepository.save(petPhoto);
             }
 
@@ -221,7 +226,19 @@ public class PetService {
     }
 
     public Long countUserPet(Long userId) {
-       //count pet
+        // count pet
         return petRepository.countByUserIdAndDeletedFalse(userId);
+    }
+
+    public void editPetWithAvatar(User user, PetDTO petDTO, MultipartFile file) {
+        System.out.println("Edit pet with avatar");
+        // edit pet with avatar
+        editPet(user, petDTO, file);
+    }
+
+    public void editPetWithoutAvatar(User user, PetDTO petDTO) {
+        System.out.println("Edit pet without avatar");
+        // edit pet without avatar
+        editPet(user, petDTO, null);
     }
 }
