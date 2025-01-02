@@ -96,14 +96,8 @@ public class FileService {
         if (fileName == null || fileName.isEmpty()) {
             return fileName;
         }
-
-        String name = fileName.substring(0, fileName.lastIndexOf("."));
         String extension = fileName.substring(fileName.lastIndexOf("."));
-        String normalized = Normalizer.normalize(name, Normalizer.Form.NFD);
-        String withoutAccent = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        String replaced = withoutAccent.replaceAll("[^a-zA-Z0-9]+", "-");
-        String singleDash = replaced.replaceAll("-{2,}", "-");
-        return singleDash.replaceAll("^-|-$", "").toLowerCase() + extension;
+        return System.currentTimeMillis() + "-" + UUID.randomUUID().toString() + extension;
     }
 
     private void validateFile(MultipartFile file) {

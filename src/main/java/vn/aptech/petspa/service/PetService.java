@@ -65,7 +65,7 @@ public class PetService {
             }
 
             // Lưu file và lấy URL
-            String uploadDir = "uploads/pets";
+            String uploadDir = "pets";
             String fileUrl = fileService.uploadFile(file, uploadDir);
 
             // Tạo Pet entity

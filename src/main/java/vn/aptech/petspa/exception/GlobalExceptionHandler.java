@@ -39,8 +39,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse> handleRuntimeException(RuntimeException e) {
         logger.error("RuntimeException: {}", e.getMessage(), e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR));
+        return ApiResponse.internalServerError(e.getMessage());
     }
 
     // Xử lý JwtException
