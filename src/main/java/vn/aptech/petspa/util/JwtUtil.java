@@ -120,6 +120,9 @@ public class JwtUtil {
 
     public boolean validateToken(String token, UserDetails userDetails) {
         final String email = extractEmail(token);
+        var claims = Jwts.parserBuilder().setSigningKey(secret).build().parseClaimsJws(token).getBody();
+        String tokenType = claims.get("type", String.class);
+        System.out.println("Token type: " + tokenType);
         return email.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 
