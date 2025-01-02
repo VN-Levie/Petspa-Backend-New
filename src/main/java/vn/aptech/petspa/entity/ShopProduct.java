@@ -9,11 +9,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "products")
+@Table(name = "shop_products")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Product extends BaseEntity {
+public class ShopProduct extends BaseEntity {
 
     @Column(nullable = false)
     private String name;
@@ -26,7 +26,7 @@ public class Product extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", nullable = false)
-    private Category category;
+    private ShopCategory category;
 
     
     

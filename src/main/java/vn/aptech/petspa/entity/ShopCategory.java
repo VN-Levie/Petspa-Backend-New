@@ -10,12 +10,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "categories")
+@Table(name = "shop_categories")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 
-public class Category extends BaseEntity {
+public class ShopCategory extends BaseEntity {
 
     @Column(nullable = false)
     private String name;
@@ -25,10 +25,10 @@ public class Category extends BaseEntity {
 
     // Liên kết với bảng Product
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Product> products;    
+    private List<ShopProduct> products;    
 
     // Constructor với hai tham số (name, description)
-    public Category(String name, String description) {
+    public ShopCategory(String name, String description) {
         this.name = name;
         this.description = description;
     }

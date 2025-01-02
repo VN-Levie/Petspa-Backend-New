@@ -56,6 +56,6 @@ public class ShopOrder extends BaseEntity {
     @CollectionTable(name = "shop_order_products", joinColumns = @JoinColumn(name = "shop_order_id"))
     @MapKeyJoinColumn(name = "product_id")
     @Column(name = "quantity")
-    private Map<Product, Integer> productQuantities;
+    private Map<ShopProduct, Integer> productQuantities;
 
 }
