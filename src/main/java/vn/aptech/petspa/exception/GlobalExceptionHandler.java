@@ -46,8 +46,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(JwtException.class)
     public ResponseEntity<ApiResponse> handleJwtException(JwtException e) {
         logger.warn("JwtException: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Unauthorized"));
+        return ApiResponse.unauthorized("Invalid token");
     }
 
     // Xử lý ngoại lệ chung
