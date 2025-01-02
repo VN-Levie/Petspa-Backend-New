@@ -25,13 +25,12 @@ public class ShopCategory extends BaseEntity {
 
     // Liên kết với bảng Product
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ShopProduct> products;    
+    private List<ShopProduct> products;
 
     // Constructor với hai tham số (name, description)
     public ShopCategory(String name, String description) {
         this.name = name;
         this.description = description;
     }
-
 
 }
