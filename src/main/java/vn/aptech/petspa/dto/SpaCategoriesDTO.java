@@ -10,9 +10,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SpaCategoryDTO {
+public class SpaCategoriesDTO {
     private Long id;
     private String name;
     private String description;
     private String imageUrl;
+    private Optional<List<SpaProductDTO>> items = Optional.empty();
 }

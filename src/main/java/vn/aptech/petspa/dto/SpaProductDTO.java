@@ -17,4 +17,19 @@ public class SpaProductDTO {
     private Long category;
     private String description;
     private boolean deleted;
+
+    public SpaProductDTO(String name, BigDecimal price) {
+        this.name = name;
+        this.price = price;
+    }
+
+    public SpaProductDTO(Long id, String name, BigDecimal price, String imageUrl, Long category, String description) {
+        this.id = id;
+        this.name = name;
+        this.price = price;
+        this.imageUrl = imageUrl;
+        this.category = category;
+        this.description = description;
+    }
+
 }

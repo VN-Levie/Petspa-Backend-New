@@ -39,4 +39,9 @@ public interface SpaProductRepository extends JpaRepository<SpaProduct, Long> {
     // findAllProductsByCategory
     @Query("SELECT p FROM SpaProduct p WHERE p.category.id = :categoryId AND p.deleted = false")
     List<SpaProduct> findAllProductsByCategory(Long categoryId);
+
+    // Long id, String name, BigDecimal price, String imageUrl, Long category,
+    // String description
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p.id, p.name, p.price, p.imageUrl, p.category.id, p.description) FROM SpaProduct p WHERE p.category.id = :id AND p.deleted = false")
+    Optional<List<SpaProductDTO>> findByCategoryId(Long id);
 }
