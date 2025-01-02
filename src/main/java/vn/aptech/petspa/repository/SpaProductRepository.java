@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Repository
 public interface SpaProductRepository extends JpaRepository<SpaProduct, Long> {
@@ -44,4 +45,7 @@ public interface SpaProductRepository extends JpaRepository<SpaProduct, Long> {
     // String description
     @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p.id, p.name, p.price, p.imageUrl, p.category.id, p.description) FROM SpaProduct p WHERE p.category.id = :id AND p.deleted = false")
     Optional<List<SpaProductDTO>> findByCategoryId(Long id);
+
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p.id, p.name, p.price, p.imageUrl, p.category.id, p.description) FROM SpaProduct p WHERE p.id = :id AND p.deleted = false")
+    Optional<SpaProductDTO> findByIdAndDeletedFalse(Long id);
 }

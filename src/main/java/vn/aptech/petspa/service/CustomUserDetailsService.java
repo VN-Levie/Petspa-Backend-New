@@ -36,4 +36,8 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .roles(user.getRoles().toArray(new String[0])) // Chuyển List thành mảng
                 .build();
     }
+
+    public Long countUsers() {
+        return userRepository.count();
+    }
 }

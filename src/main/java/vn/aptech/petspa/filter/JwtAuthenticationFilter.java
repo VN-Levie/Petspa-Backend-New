@@ -5,6 +5,8 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,7 +18,7 @@ import vn.aptech.petspa.entity.User;
 import vn.aptech.petspa.repository.UserRepository;
 import vn.aptech.petspa.service.CustomUserDetailsService;
 import vn.aptech.petspa.util.JwtUtil;
-
+import vn.aptech.petspa.util.ZDebug;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,23 +45,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // System.out.println("JWT is null");
             // response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
             // SecurityContextHolder.clearContext();
+            ZDebug.gI().ZigDebug("JWT is null");
             filterChain.doFilter(request, response);
             return;
         }
         String username = null;
         if (jwt != null) {
-            try {
-                username = jwtUtil.extractEmail(jwt);
-            } catch (Exception e) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
-                SecurityContextHolder.clearContext(); // Xóa context để chặn quyền
-                return; // Dừng filter
-            }
-            if (username == null) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
-                SecurityContextHolder.clearContext(); // Xóa context để chặn quyền
-                return;
-            }
+            ZDebug.gI().ZigDebug("!JWT is null");
+
+            username = jwtUtil.extractEmail(jwt);
+
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 

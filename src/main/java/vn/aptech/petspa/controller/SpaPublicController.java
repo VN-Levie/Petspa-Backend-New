@@ -1,6 +1,7 @@
 package vn.aptech.petspa.controller;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +16,16 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import vn.aptech.petspa.dto.SpaCategoriesDTO;
+import vn.aptech.petspa.dto.SpaProductDTO;
+import vn.aptech.petspa.service.CustomUserDetailsService;
 import vn.aptech.petspa.service.SpaService;
 import vn.aptech.petspa.util.ApiResponse;
 import vn.aptech.petspa.util.JwtUtil;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.EnumSet;
 
 @RestController
 @RequestMapping("/api/public/spa")
@@ -63,6 +71,9 @@ public class SpaPublicController {
     @Autowired
     private SpaService spaService;
 
+    @Autowired
+    private CustomUserDetailsService customUserDetailsService;
+
     @GetMapping("/all-services")
     public ResponseEntity<ApiResponse> getServices() {
         try {
@@ -74,8 +85,43 @@ public class SpaPublicController {
         }
     }
 
+    @RequestMapping(value = "/all-services", method = RequestMethod.OPTIONS)
+    public ResponseEntity<ApiResponse> handleOptions() {
 
-    //count Spa categories
+        return getServices();
+    }
+
+    // Get services by category
+    @GetMapping("/services-by-category")
+    public ResponseEntity<ApiResponse> getServicesByCategory(@RequestParam Long categoryId) {
+        try {
+            Optional<List<SpaProductDTO>> spaCategoriesDTOs = spaService.getServicesByCategory(categoryId);
+            if (spaCategoriesDTOs.isEmpty() || spaCategoriesDTOs.get().isEmpty()) {
+                return ApiResponse.notFound("Category not found");
+            }
+            return ResponseEntity.ok(new ApiResponse(spaCategoriesDTOs));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.badRequest(e.getMessage());
+        }
+    }
+
+    // Get services by id
+    @GetMapping("/services-by-id")
+    public ResponseEntity<ApiResponse> getServicesById(@RequestParam Long id) {
+        try {
+            Optional<SpaProductDTO> spaCategoriesDTOs = spaService.getServicesById(id);
+            if (spaCategoriesDTOs.isEmpty() || spaCategoriesDTOs.get().isDeleted()) {
+                return ApiResponse.notFound("Service not found");
+            }
+            return ResponseEntity.ok(new ApiResponse(spaCategoriesDTOs));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.badRequest(e.getMessage());
+        }
+    }
+
+    // count Spa categories
     @GetMapping("/count-categories")
     public ResponseEntity<ApiResponse> countCategories() {
         try {
@@ -86,8 +132,8 @@ public class SpaPublicController {
             return ApiResponse.badRequest(e.getMessage());
         }
     }
-    
-    //count Spa products
+
+    // count Spa products
     @GetMapping("/count-products")
     public ResponseEntity<ApiResponse> countProducts() {
         try {
@@ -99,6 +145,16 @@ public class SpaPublicController {
         }
     }
 
-
+    // count user
+    @GetMapping("/count-users")
+    public ResponseEntity<ApiResponse> countUsers() {
+        try {
+            Long count = customUserDetailsService.countUsers();
+            return ResponseEntity.ok(new ApiResponse(count));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.badRequest(e.getMessage());
+        }
+    }
 
 }

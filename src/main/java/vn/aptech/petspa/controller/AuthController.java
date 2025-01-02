@@ -41,6 +41,7 @@ import vn.aptech.petspa.repository.UserRepository;
 import vn.aptech.petspa.service.EmailService;
 import vn.aptech.petspa.util.ApiResponse;
 import vn.aptech.petspa.util.JwtUtil;
+import vn.aptech.petspa.util.ZDebug;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -162,19 +163,18 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/logout")
-    public ResponseEntity<ApiResponse> logout(@RequestHeader("Authorization") String token) {
-        // 1. (Tuỳ chọn) Blacklist token tại server nếu cần
-        // jwtUtil.invalidateToken(token);
-
-        ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Logout successfully!", null);
-        return ResponseEntity.ok(response);
-    }
-
     @PostMapping("/refresh-token")
-    public ResponseEntity<ApiResponse> refreshToken(@RequestHeader("Authorization") String refreshToken) {
+    public ResponseEntity<ApiResponse> refreshToken(
+            @RequestHeader(value = "Authorization", required = false) String refreshToken) {
         try {
+            if (refreshToken == null || !refreshToken.startsWith("Bearer ")) {
+                throw new IllegalArgumentException("Refresh token is missing or invalid");
+            }
+            ZDebug.gI().ZigDebug("refreshToken");
+
+            // Loại bỏ tiền tố 'Bearer '
             refreshToken = refreshToken.replace("Bearer ", "");
+
             // Giải mã và kiểm tra refresh token
             String username = jwtUtil.extractEmail(refreshToken);
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -184,10 +184,16 @@ public class AuthController {
                 if (user == null) {
                     throw new IllegalArgumentException("User not found");
                 }
-                // Tạo access token mới
-                String newAccessToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.ACCESS_TOKEN);
-                ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Token refreshed successfully!",
-                        newAccessToken);
+                String jwtToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.ACCESS_TOKEN);
+                UserDTO userDTO = new UserDTO();
+                userDTO.setEmail(user.getEmail());
+                userDTO.setName(user.getName());
+                // userDTO.setRole(user.getRole().getName());
+                userDTO.setVerified(user.isVerified());
+                userDTO.setToken(jwtToken);
+                userDTO.setRefreshToken(refreshToken);
+
+                ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Token refreshed successfully!", userDTO);
                 return ResponseEntity.ok(response);
             } else {
                 throw new IllegalArgumentException("Invalid refresh token");
@@ -197,6 +203,15 @@ public class AuthController {
                     null);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
+    }
+
+    @GetMapping("/logout")
+    public ResponseEntity<ApiResponse> logout(@RequestHeader("Authorization") String token) {
+        // 1. (Tuỳ chọn) Blacklist token tại server nếu cần
+        // jwtUtil.invalidateToken(token);
+
+        ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Logout successfully!", null);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/forgot-password")
@@ -484,6 +499,7 @@ public class AuthController {
     // profile
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse> profile(@RequestHeader("Authorization") String token) {
+        ZDebug.gI().ZigDebug("profile");
         try {
             if (token == null || token.isEmpty()) {
                 return ApiResponse.unauthorized("Invalid token");
@@ -492,8 +508,8 @@ public class AuthController {
             String email = jwtUtil.extractEmail(token);
             User user = userRepository.findByEmail(email).orElse(null);
             if (user == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "User not found.", null));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "User not found.", null));
             }
             UserDTO userDTO = new UserDTO(user.getId());
             userDTO.setEmail(user.getEmail());

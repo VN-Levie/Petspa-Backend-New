@@ -1,10 +1,12 @@
 package vn.aptech.petspa.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import vn.aptech.petspa.dto.SpaCategoriesDTO;
+import vn.aptech.petspa.dto.SpaProductDTO;
 import vn.aptech.petspa.repository.SpaCategoryRepository;
 import vn.aptech.petspa.repository.SpaProductRepository;
 import vn.aptech.petspa.util.JwtUtil;
@@ -42,6 +44,14 @@ public class SpaService {
 
     public Long countProducts() {
         return spaProductRepository.count();
+    }
+
+    public Optional<List<SpaProductDTO>> getServicesByCategory(Long categoryId) {
+        return spaProductRepository.findByCategoryId(categoryId);
+    }
+
+    public Optional<SpaProductDTO> getServicesById(Long id) {
+        return spaProductRepository.findByIdAndDeletedFalse(id);
     }
 
 }

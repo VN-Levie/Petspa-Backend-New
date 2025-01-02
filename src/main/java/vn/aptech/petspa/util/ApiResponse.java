@@ -47,4 +47,9 @@ public class ApiResponse {
         return ResponseEntity.status(STATUS_INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse(STATUS_INTERNAL_SERVER_ERROR, message));
     }
+
+    public static ResponseEntity<ApiResponse> notFound(String message) {
+        return ResponseEntity.status(STATUS_NOT_FOUND)
+                .body(new ApiResponse(STATUS_NOT_FOUND, message));
+    }
 }
