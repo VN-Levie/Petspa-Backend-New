@@ -1,6 +1,7 @@
 package vn.aptech.petspa.util;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.function.Function;
+
 import javax.crypto.SecretKey;
 
 @Component
@@ -68,20 +71,18 @@ public class JwtUtil {
      * Giải mã và lấy username từ token
      */
     public String extractEmail(String token) {
-        try {
-            token = extractToken(token);
-            if (token == null) {
-                return null;
-            }
-            return Jwts.parserBuilder()
-                    .setSigningKey(secret)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody()
-                    .getSubject();
-        } catch (Exception e) {
+
+        token = extractToken(token);
+        if (token == null) {
             return null;
         }
+        return Jwts.parserBuilder()
+                .setSigningKey(secret)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+
     }
 
     // extract userId from token
@@ -155,16 +156,19 @@ public class JwtUtil {
         return token.replace("Bearer ", "");
     }
 
-    // UNAUTHORIZED
-    public ResponseEntity<ApiResponse> responseUnauthorized() {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Unauthorized"));
+    public String extractUsername(String bearerToken) {
+        return extractClaimBody(bearerToken, Claims::getSubject);
     }
 
-    public ResponseEntity<ApiResponse> responseInternalServerError(Exception e) {
-        e.printStackTrace();
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "Something went wrong"));
+    public <T> T extractClaimBody(String bearerToken,
+            Function<Claims, T> claimsResolver) {
+        Jws<Claims> jwsClaims = extractClaims(bearerToken);
+        return claimsResolver.apply(jwsClaims.getBody());
+    }
+
+    private Jws<Claims> extractClaims(String bearerToken) {
+        return Jwts.parserBuilder().setSigningKey(secret)
+                .build().parseClaimsJws(bearerToken);
     }
 
 }

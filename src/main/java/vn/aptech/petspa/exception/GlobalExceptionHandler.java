@@ -7,9 +7,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.swagger.v3.oas.annotations.Hidden;
 import vn.aptech.petspa.util.ApiResponse;
+import vn.aptech.petspa.util.ZDebug;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +49,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(JwtException.class)
     public ResponseEntity<ApiResponse> handleJwtException(JwtException e) {
         logger.warn("JwtException: {}", e.getMessage());
+        ZDebug.gI().logException("Xử lý JwtException", e);
+        return ApiResponse.unauthorized("Invalid token");
+    }
+
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<ApiResponse> handleExpiredJwtException(ExpiredJwtException e) {
+        // logger.warn("JwtException: {}", e.getMessage());
+        // ZDebug.gI().logException("ExpiredJwtException", e);
         return ApiResponse.unauthorized("Invalid token");
     }
 

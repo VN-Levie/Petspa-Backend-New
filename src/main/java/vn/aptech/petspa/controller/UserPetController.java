@@ -29,6 +29,7 @@ import vn.aptech.petspa.repository.UserRepository;
 import vn.aptech.petspa.service.PetService;
 import vn.aptech.petspa.util.ApiResponse;
 import vn.aptech.petspa.util.JwtUtil;
+import vn.aptech.petspa.util.ZDebug;
 
 @RestController
 @RequestMapping("/api/user-pet") // Pet của user
@@ -79,7 +80,7 @@ public class UserPetController {
         PetDTO petDTO = objectMapper.readValue(petDTOJson, PetDTO.class);
 
         String email = jwtUtil.extractEmail(token);
-
+        ZDebug.gI().ZigDebug("email: " + email + "token: " + token);
         if (!petTypeRepository.existsById(petDTO.getPetTypeId())) {
             throw new IllegalArgumentException("Pet type does not exist");
         }
@@ -88,7 +89,8 @@ public class UserPetController {
             throw new IllegalArgumentException("File is required");
         }
 
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("add pet.User not found"));
 
         if (petService.checkPetNameExists(user.getId(), petDTO.getName(), petDTO.getPetTypeId())) {
             throw new IllegalArgumentException("Pet name already exists");

@@ -5,7 +5,11 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
@@ -14,6 +18,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import vn.aptech.petspa.entity.User;
 import vn.aptech.petspa.repository.UserRepository;
 import vn.aptech.petspa.service.CustomUserDetailsService;
@@ -23,6 +31,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
+import jakarta.annotation.Resource;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -31,50 +41,44 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private CustomUserDetailsService userDetailsService;
+    private CustomUserDetailsService customUserDetailsService;
 
     @Autowired
     private UserRepository userRepository;
 
+    public String HEADER_STRING = "Authorization";
+
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+    protected void doFilterInternal(@NonNull HttpServletRequest req, @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        final String jwt = getJwtFromRequest(request);
-        if (jwt == null) {
-            // System.out.println("JWT is null");
-            // response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
-            // SecurityContextHolder.clearContext();
-            ZDebug.gI().ZigDebug("JWT is null");
-            filterChain.doFilter(request, response);
-            return;
-        }
         String username = null;
-        if (jwt != null) {
-            ZDebug.gI().ZigDebug("!JWT is null");
+        String authToken = null;
 
-            username = jwtUtil.extractEmail(jwt);
+        authToken = getJwtFromRequest(req);
 
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        try {
+            username = jwtUtil.extractUsername(authToken);
+        } catch (Exception e) {
+        }
 
-                if (jwtUtil.validateToken(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                    // Lưu vào request
-                    User user = userRepository.findByEmail(username)
-                            .orElseThrow(() -> new IllegalArgumentException("User not found"));
-                    request.setAttribute("user", user);
-                } else {
-                    logger.warn("JWT validation failed for user: " + username);
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
-                }
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+
+            if (jwtUtil.validateToken(authToken, userDetails)) {
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                // // Lưu vào request
+                // User user = userRepository.findByEmail(email)
+                // .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                // request.setAttribute("user", user);
             }
         }
 
-        filterChain.doFilter(request, response);
+        filterChain.doFilter(req, response);
+
     }
 
     // Hàm lấy JWT từ header Authorization
@@ -88,4 +92,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return null;
         }
     }
+
+    private void sendCustomErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        Map<String, Object> errorDetails = new HashMap<>();
+        errorDetails.put("status", status);
+        errorDetails.put("message", message);
+        errorDetails.put("timestamp", System.currentTimeMillis());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        OutputStream out = response.getOutputStream();
+        objectMapper.writeValue(out, errorDetails);
+        out.flush();
+    }
+
 }

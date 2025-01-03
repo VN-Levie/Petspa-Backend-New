@@ -182,7 +182,7 @@ public class AuthController {
             if (jwtUtil.validateToken(refreshToken, userDetails)) {
                 User user = userRepository.findByEmail(username).orElse(null);
                 if (user == null) {
-                    throw new IllegalArgumentException("User not found");
+                    throw new IllegalArgumentException("refresh-token. User not found");
                 }
                 String jwtToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.ACCESS_TOKEN);
                 UserDTO userDTO = new UserDTO();
@@ -406,7 +406,7 @@ public class AuthController {
             User user = userRepository.findByEmail(email).orElse(null);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "User not found.", null));
+                        .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "verify-otp. User not found.", null));
             }
             String mess = user.isVerified() ? "OTP verified successfully!" : "Email already verified.";
             VerifyDTO verifyDTO = new VerifyDTO(user.getId(), email, user.isVerified());
@@ -440,7 +440,7 @@ public class AuthController {
         User user = userRepository.findByEmail(email).orElse(null);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "User not found.", null));
+                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "is-verified. User not found.", null));
         }
         String mess = user.isVerified() ? "Email is verified." : "Email is not verified.";
         VerifyDTO verifyDTO = new VerifyDTO(user.getId(), email, user.isVerified());
@@ -456,7 +456,7 @@ public class AuthController {
         User user = userRepository.findById(verifyDTO.getUserId()).orElse(null);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "User not found.", null));
+                    .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "update-email. User not found.", null));
         }
 
         if (user.isVerified()) {
@@ -505,11 +505,16 @@ public class AuthController {
                 return ApiResponse.unauthorized("Invalid token");
             }
             token = jwtUtil.extractToken(token);
-            String email = jwtUtil.extractEmail(token);
+            String email = null;
+            try {
+                email = jwtUtil.extractEmail(token);
+            } catch (Exception e) {
+                ApiResponse.unauthorized("Invalid token");
+            }
             User user = userRepository.findByEmail(email).orElse(null);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "User not found.", null));
+                        .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "profile. User not found.", null));
             }
             UserDTO userDTO = new UserDTO(user.getId());
             userDTO.setEmail(user.getEmail());

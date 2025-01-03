@@ -206,7 +206,7 @@ public final class ZDebug {
             // Viết hoa ký tự đầu tiên
             string = string.substring(0, 1).toUpperCase() + string.substring(1);
 
-            System.out.println(strDate() + ANSI_DARK_RED + string + ": " + e.getMessage());
+            System.out.println(strDate() + ANSI_RED + string + ": " + e.getMessage());
             e.printStackTrace(); // In ra toàn bộ stack trace
             System.out.println(ANSI_RESET);
 
@@ -220,7 +220,7 @@ public final class ZDebug {
     public void logException(Exception e) {
         try {
 
-            System.out.println(strDate() + ANSI_DARK_RED + ": " + e.getLocalizedMessage() + ANSI_RESET);
+            System.out.println(strDate() + ANSI_RED + ": " + e.getLocalizedMessage() + ANSI_RESET);
 
         } catch (Exception ex) {
             System.out.println("Uitl.logException: " + ex.getCause());
