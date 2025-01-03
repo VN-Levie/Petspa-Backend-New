@@ -21,6 +21,8 @@ import vn.aptech.petspa.repository.PetHealthRepository;
 import vn.aptech.petspa.repository.PetPhotoRepository;
 import vn.aptech.petspa.repository.PetRepository;
 import vn.aptech.petspa.repository.PetTypeRepository;
+import vn.aptech.petspa.util.ZDebug;
+
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -37,11 +39,6 @@ public class PetService {
 
     @Autowired
     private FileService fileService;
-
-    public List<Pet> fetchUserPets(Long userId) {
-        // Trả về danh sách Pet chưa bị xóa
-        return petRepository.findByUserIdAndDeletedFalse(userId);
-    }
 
     // @Transactional(readOnly = true)
     public List<PetDTO> getUserPets(Long userId) {
@@ -132,32 +129,54 @@ public class PetService {
                 if (!fileService.isImage(file.getInputStream(), file.getOriginalFilename())) {
                     throw new IllegalArgumentException("Invalid image format.");
                 }
-                String uploadDir = "uploads/pets";
+                String uploadDir = "pets";
                 String fileUrl = fileService.uploadFile(file, uploadDir);
                 pet.setAvatarUrl(fileUrl); // Cập nhật URL avatar mới
             }
 
             // Lưu Pet vào DB
             petRepository.save(pet);
- 
+
             // Cập nhật thông tin PetHealth
-            PetHealth petHealth = petHealthRepository.findByPetId(pet.getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Pet health not found"));
-            petHealth.setWeight(petDTO.getWeight());
-            petHealth.setHeight(petDTO.getHeight());
-            petHealthRepository.save(petHealth);
+            PetHealth existingPetHealth = petHealthRepository.findByPetId(pet.getId()).orElse(null);
+
+            if (existingPetHealth == null) {
+                // Tạo PetHealth mới nếu không tồn tại thông tin sức khỏe cũ
+                PetHealth newPetHealth = new PetHealth();
+                newPetHealth.setPet(pet);
+                newPetHealth.setWeight(petDTO.getWeight());
+                newPetHealth.setHeight(petDTO.getHeight());
+                petHealthRepository.save(newPetHealth);
+            } else {
+                // Kiểm tra nếu thông tin sức khỏe mới khác thông tin sức khỏe cũ
+                if (!existingPetHealth.getWeight().equals(petDTO.getWeight()) ||
+                        !existingPetHealth.getHeight().equals(petDTO.getHeight())) {
+                    PetHealth newPetHealth = new PetHealth();
+                    newPetHealth.setPet(pet);
+                    newPetHealth.setWeight(petDTO.getWeight());
+                    newPetHealth.setHeight(petDTO.getHeight());
+                    petHealthRepository.save(newPetHealth);
+                }
+            }
 
             // Nếu có file mới thì cập nhật PetPhoto
             if (file != null && !file.isEmpty()) {
-                PetPhoto petPhoto = petPhotoRepository.findByPetId(pet.getId())
-                        .orElseThrow(() -> new IllegalArgumentException("Pet photo not found"));
-                petPhoto.setUrl(pet.getAvatarUrl());
-                petPhotoRepository.save(petPhoto);
+                // PetPhoto petPhoto = petPhotoRepository.findByPetId(pet.getId())
+                //         .orElseThrow(() -> new IllegalArgumentException("Pet photo not found"));
+                // petPhoto.setUrl(pet.getAvatarUrl());
+                // petPhotoRepository.save(petPhoto);
+                // Tạo và lưu PetPhoto mới
+                PetPhoto newPetPhoto = new PetPhoto();
+                newPetPhoto.setPet(pet);
+                newPetPhoto.setUrl(pet.getAvatarUrl());
+                newPetPhoto.setUploadedBy(user);
+                petPhotoRepository.save(newPetPhoto);
             }
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to save file: " + e.getMessage());
         } catch (Exception e) {
+            ZDebug.gI().logException("Failed to edit pet: " + e.getMessage(), e);
             throw new RuntimeException("Failed to edit pet: " + e.getMessage());
         }
     }

@@ -29,10 +29,14 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
 
     Page<Pet> findByPetType_NameAndDeletedFalse(String type, Pageable pageable);
 
-    @Query("SELECT new vn.aptech.petspa.dto.PetDTO(p, h) FROM Pet p JOIN p.healths h WHERE p.user.id = :userId and p.deleted = false")
+    @Query("SELECT new vn.aptech.petspa.dto.PetDTO(p, h) " +
+            "FROM Pet p " +
+            "JOIN p.healths h " +
+            "WHERE p.user.id = :userId AND p.deleted = false " +
+            "AND h.updatedAt = (SELECT MAX(h2.updatedAt) FROM PetHealth h2 WHERE h2.pet.id = p.id AND h2.deleted = false)")
     List<PetDTO> findPetsWithHealths(@Param("userId") Long userId);
 
     Long countByUserIdAndDeletedFalse(Long userId);
 
-    Optional<PetType> findByNameAndUserId(String name, Long id);
+    Optional<Pet> findByNameAndUserId(String name, Long id);
 }

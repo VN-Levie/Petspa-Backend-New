@@ -120,9 +120,7 @@ public class UserPetController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if (petService.checkPetNameExists(user.getId(), petDTO.getName(), petDTO.getPetTypeId())) {
-            throw new IllegalArgumentException("Pet name already exists");
-        }
+       
 
         // Gọi service khác nếu không có file
         if (file != null && !file.isEmpty()) {

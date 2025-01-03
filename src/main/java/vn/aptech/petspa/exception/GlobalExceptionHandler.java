@@ -27,8 +27,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse> handleIllegalArgumentException(IllegalArgumentException e) {
         logger.warn("IllegalArgumentException: {}", e.getMessage());
-        return ResponseEntity.badRequest()
-                .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST));
+        return ApiResponse.badRequest(e.getMessage());
     }
 
     // Xử lý JsonProcessingException
