@@ -22,9 +22,12 @@ public class PetDTO {
         this.id = pet.getId();
         this.name = pet.getName();
         this.description = pet.getDescription();
-        PetHealth firstHealth = pet.getHealths().iterator().next();
-        this.height = firstHealth.getHeight();
-        this.weight = firstHealth.getWeight();
+        PetHealth lastHealth = pet.getHealths()
+                .stream()
+                .max((h1, h2) -> h1.getId().compareTo(h2.getId()))
+                .orElse(new PetHealth());
+        this.height = lastHealth.getHeight();
+        this.weight = lastHealth.getWeight();
         this.userId = pet.getUser().getId();
         this.avatarUrl = pet.getAvatarUrl();
         this.petTypeId = pet.getPetType().getId();

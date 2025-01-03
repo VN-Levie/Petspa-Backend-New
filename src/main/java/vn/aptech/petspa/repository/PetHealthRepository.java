@@ -11,4 +11,6 @@ public interface PetHealthRepository extends JpaRepository<PetHealth, Long> {
 
     Optional<PetHealth> findByPetId(Long petId);
 
+    Optional<PetHealth> findTopByPetIdOrderByIdDesc(Long petId);
+
 }

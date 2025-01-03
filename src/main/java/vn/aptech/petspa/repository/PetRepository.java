@@ -26,7 +26,8 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
     Page<Pet> findByUserIdAndDeletedFalse(Long userId, Pageable pageable);
 
     @EntityGraph(attributePaths = { "petType", "photos", "healths" })
-    Page<Pet> findByUserIdAndNameContainingAndPetTypeIdAndDeletedFalse(Long userId, String name, Long petTypeId, Pageable pageable);
+    Page<Pet> findByUserIdAndNameContainingAndPetTypeIdAndDeletedFalse(Long userId, String name, Long petTypeId,
+            Pageable pageable);
 
     @EntityGraph(attributePaths = { "petType", "photos", "healths" })
     Page<Pet> findByUserIdAndNameContainingAndDeletedFalse(Long userId, String name, Pageable pageable);
@@ -41,14 +42,8 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
 
     Page<Pet> findByPetType_NameAndDeletedFalse(String type, Pageable pageable);
 
-    @Query("SELECT new vn.aptech.petspa.dto.PetDTO(p, h) " +
-            "FROM Pet p " +
-            "JOIN p.healths h " +
-            "WHERE p.user.id = :userId AND p.deleted = false " +
-            "AND h.updatedAt = (SELECT MAX(h2.updatedAt) FROM PetHealth h2 WHERE h2.pet.id = p.id AND h2.deleted = false)")
-    List<PetDTO> findPetsWithHealths(@Param("userId") Long userId);
-
     Long countByUserIdAndDeletedFalse(Long userId);
 
-    Optional<Pet> findByNameAndUserId(String name, Long id);
+    boolean existsByNameAndUserIdAndIdNot(String name, Long userId, Long petId);
+
 }

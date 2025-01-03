@@ -40,22 +40,12 @@ public class PetService {
     @Autowired
     private FileService fileService;
 
-    // @Transactional(readOnly = true)
-    public List<PetDTO> getUserPets(Long userId) {
-        return petRepository.findPetsWithHealths(userId);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<PetDTO> getUserPets(Long userId, Pageable pageable) {
-        Page<Pet> pets = petRepository.findByUserIdAndDeletedFalse(userId, pageable);
-        return pets.map(pet -> new PetDTO(pet));
-    }
-
     @Transactional(readOnly = true)
     public Page<PetDTO> getUserPets(Long userId, String name, Long petTypeId, Pageable pageable) {
         Page<Pet> pets;
         if (name != null && petTypeId != null) {
-            pets = petRepository.findByUserIdAndNameContainingAndPetTypeIdAndDeletedFalse(userId, name, petTypeId, pageable);
+            pets = petRepository.findByUserIdAndNameContainingAndPetTypeIdAndDeletedFalse(userId, name, petTypeId,
+                    pageable);
         } else if (name != null) {
             pets = petRepository.findByUserIdAndNameContainingAndDeletedFalse(userId, name, pageable);
         } else if (petTypeId != null) {
@@ -96,7 +86,12 @@ public class PetService {
             }
 
             checkPetValid(petDTO);
+            boolean petNameExists = petRepository.existsByNameAndUserIdAndIdNot(petDTO.getName(), user.getId(),
+                    petDTO.getId());
 
+            if (petNameExists) {
+                throw new IllegalArgumentException("Pet name already exists");
+            }
             // Lưu file và lấy URL
             String uploadDir = "pets";
             String fileUrl = fileService.uploadFile(file, uploadDir);
@@ -143,9 +138,13 @@ public class PetService {
                     .orElseThrow(() -> new IllegalArgumentException("Pet not found"));
 
             // Kiểm tra trùng tên (trừ trường hợp cùng id)
-            boolean petNameExists = petRepository.findByNameAndUserId(petDTO.getName(), user.getId())
-                    .filter(existingPet -> !existingPet.getId().equals(pet.getId()))
-                    .isPresent();
+            // boolean petNameExists = petRepository.findByNameAndUserId(petDTO.getName(),
+            // user.getId())
+            // .filter(existingPet -> !existingPet.getId().equals(pet.getId()))
+            // .isPresent();
+
+            boolean petNameExists = petRepository.existsByNameAndUserIdAndIdNot(petDTO.getName(), user.getId(),
+                    petDTO.getId());
 
             if (petNameExists) {
                 throw new IllegalArgumentException("Pet name already exists");
@@ -174,7 +173,7 @@ public class PetService {
             petRepository.save(pet);
 
             // Cập nhật thông tin PetHealth
-            PetHealth existingPetHealth = petHealthRepository.findByPetId(pet.getId()).orElse(null);
+            PetHealth existingPetHealth = petHealthRepository.findTopByPetIdOrderByIdDesc(pet.getId()).orElse(null);
 
             if (existingPetHealth == null) {
                 // Tạo PetHealth mới nếu không tồn tại thông tin sức khỏe cũ
