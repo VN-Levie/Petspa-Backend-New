@@ -12,6 +12,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.UUID;
+import com.luciad.imageio.webp.WebPWriteParam;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
+import java.awt.image.BufferedImage;
+import java.io.*;
 
 @Service
 public class FileService {
@@ -32,14 +39,14 @@ public class FileService {
             }
             // Kiểm tra extension trước
             String extension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-            if (!extension.matches("jpg|jpeg|png|gif")) {
+            if (!extension.matches("jpg|jpeg|png|gif|webp|bmp")) {
                 return false;
             }
 
             // Kiểm tra MIME type (sử dụng Apache Tika)
             Tika tika = new Tika();
             String mimeType = tika.detect(fileInputStream);
-            return mimeType.matches("image/jpeg|image/png|image/gif");
+            return mimeType.matches("image/jpeg|image/png|image/gif|image/webp|image/bmp");
         } catch (IOException e) {
             return false; // Nếu không thể kiểm tra, không chấp nhận file
         }
@@ -77,11 +84,16 @@ public class FileService {
                 filePath = uploadPath.resolve(fileName);
             }
 
-            // Lưu file
-            Files.copy(file.getInputStream(), filePath);
+            // Đọc ảnh từ file
+            BufferedImage image = ImageIO.read(file.getInputStream());
 
-            // Tạo URL
-            return "/uploads/" + (safeDirectory != null ? safeDirectory + "/" : "") + fileName;
+            // Chuyển đổi ảnh sang WebP
+            String webpFileName = fileName.substring(0, fileName.lastIndexOf(".")) + ".webp";
+            Path webpFilePath = uploadPath.resolve(webpFileName);
+            convertToWebP(image, webpFilePath.toString());
+
+            // Trả về URL
+            return "/uploads/" + (safeDirectory != null ? safeDirectory + "/" : "") + webpFileName;
 
         } catch (IOException e) {
             throw new RuntimeException("Error saving file", e);
@@ -122,5 +134,20 @@ public class FileService {
         }
         // Loại bỏ các ký tự không hợp lệ trong đường dẫn
         return directory.replaceAll("[^a-zA-Z0-9/_-]", "").replaceAll("/{2,}", "/");
+    }
+
+    private void convertToWebP(BufferedImage image, String outputFilePath) throws IOException {
+        ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
+        try (FileOutputStream fos = new FileOutputStream(outputFilePath);
+                ImageOutputStream ios = ImageIO.createImageOutputStream(fos)) {
+            writer.setOutput(ios);
+
+            WebPWriteParam writeParam = new WebPWriteParam(writer.getLocale());
+            writeParam.setCompressionMode(ImageWriteParam.MODE_DEFAULT);
+
+            writer.write(null, new javax.imageio.IIOImage(image, null, null), writeParam);
+        } finally {
+            writer.dispose();
+        }
     }
 }

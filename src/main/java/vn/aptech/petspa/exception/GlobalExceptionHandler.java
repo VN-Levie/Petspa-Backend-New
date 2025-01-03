@@ -26,51 +26,54 @@ public class GlobalExceptionHandler {
     // Xử lý IllegalArgumentException
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        logger.warn("IllegalArgumentException: {}", e.getMessage());
+        // logger.warn("IllegalArgumentException: {}", e.getMessage());
+        ZDebug.gI().error("IllegalArgumentException.throw: " + e.getMessage());
         return ApiResponse.badRequest(e.getMessage());
     }
 
     // Xử lý JsonProcessingException
     @ExceptionHandler(JsonProcessingException.class)
     public ResponseEntity<ApiResponse> handleJsonProcessingException(JsonProcessingException e) {
-        logger.warn("JsonProcessingException: {}", e.getMessage());
-        return ResponseEntity.badRequest()
-                .body(new ApiResponse(ApiResponse.STATUS_BAD_REQUEST, "Invalid JSON format"));
+        // logger.warn("JsonProcessingException: {}", e.getMessage());
+        ZDebug.gI().error("JsonProcessingException.throw: " + e.getMessage());
+        return ApiResponse.badRequest("Invalid request body");
     }
 
     // Xử lý RuntimeException
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse> handleRuntimeException(RuntimeException e) {
-        logger.error("RuntimeException: {}", e.getMessage(), e);
+        // logger.error("RuntimeException: {}", e.getMessage(), e);
+        ZDebug.gI().error("RuntimeException.throw: " + e.getMessage());
         return ApiResponse.internalServerError(e.getMessage());
+        // return ApiResponse.internalServerError("Something went wrong");
     }
 
     // Xử lý JwtException
     @ExceptionHandler(JwtException.class)
     public ResponseEntity<ApiResponse> handleJwtException(JwtException e) {
-        logger.warn("JwtException: {}", e.getMessage());
-        ZDebug.gI().logException("Xử lý JwtException", e);
+        // logger.warn("JwtException: {}", e.getMessage());
+        ZDebug.gI().error("JwtException.throw: " + e.getMessage());
         return ApiResponse.unauthorized("Invalid token");
     }
 
     @ExceptionHandler(ExpiredJwtException.class)
     public ResponseEntity<ApiResponse> handleExpiredJwtException(ExpiredJwtException e) {
         // logger.warn("JwtException: {}", e.getMessage());
-        // ZDebug.gI().logException("ExpiredJwtException", e);
+        ZDebug.gI().error("ExpiredJwtException.throw: " + e.getMessage());
         return ApiResponse.unauthorized("Invalid token");
     }
 
     // Xử lý ngoại lệ chung
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGenericException(Exception e) {
-        logger.error("Unhandled exception: {}", e.getMessage(), e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "Something went wrong"));
+        // logger.error("Unhandled exception: {}", e.getMessage(), e);
+        ZDebug.gI().error("Exception.throw: " + e.getMessage());
+        // return ApiResponse.internalServerError("Something went wrong");
+        return ApiResponse.internalServerError(e.getMessage());
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiResponse> handleNotFound(NoResourceFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ApiResponse(ApiResponse.STATUS_NOT_FOUND, "Resource not found"));
+        return ApiResponse.notFound(ex.getMessage());
     }
 }

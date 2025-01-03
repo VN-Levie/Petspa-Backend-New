@@ -50,6 +50,19 @@ public class PetService {
         return petRepository.findByUserId(userId);
     }
 
+    private void checkPetValid(PetDTO petDTO) {
+        if (petDTO.getWeight() < 0 || petDTO.getHeight() < 0) {
+            throw new IllegalArgumentException("Weight and height must be greater than 0.");
+        }
+        if (petDTO.getHeight() > 200) {
+            throw new IllegalArgumentException("Height must be less than 200 cm.\n We accept pets, not dinosaurs!?");
+        }
+        if (petDTO.getWeight() > 120) {
+            throw new IllegalArgumentException(
+                    "Weight limit: 120 kg.\n We love big pets... just not bear-sized ones!");
+        }
+    }
+
     @Transactional
     public void addPet(User user, PetDTO petDTO, MultipartFile file) {
         try {
@@ -60,6 +73,8 @@ public class PetService {
             if (!fileService.isImage(file.getInputStream(), file.getOriginalFilename())) {
                 throw new IllegalArgumentException("Invalid image format.");
             }
+
+            checkPetValid(petDTO);
 
             // Lưu file và lấy URL
             String uploadDir = "pets";
@@ -92,9 +107,9 @@ public class PetService {
             petPhotoRepository.save(petPhoto);
 
         } catch (IOException e) {
-            throw new RuntimeException("Failed to save file: " + e.getMessage());
+            throw new IllegalArgumentException("Failed to save file: " + e.getMessage());
         } catch (Exception e) {
-            throw new RuntimeException("Failed to add pet: " + e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
@@ -114,7 +129,7 @@ public class PetService {
             if (petNameExists) {
                 throw new IllegalArgumentException("Pet name already exists");
             }
-
+            checkPetValid(petDTO);
             // Cập nhật thông tin Pet
             pet.setName(petDTO.getName());
             pet.setDescription(petDTO.getDescription());
@@ -161,11 +176,7 @@ public class PetService {
 
             // Nếu có file mới thì cập nhật PetPhoto
             if (file != null && !file.isEmpty()) {
-                // PetPhoto petPhoto = petPhotoRepository.findByPetId(pet.getId())
-                //         .orElseThrow(() -> new IllegalArgumentException("Pet photo not found"));
-                // petPhoto.setUrl(pet.getAvatarUrl());
-                // petPhotoRepository.save(petPhoto);
-                // Tạo và lưu PetPhoto mới
+
                 PetPhoto newPetPhoto = new PetPhoto();
                 newPetPhoto.setPet(pet);
                 newPetPhoto.setUrl(pet.getAvatarUrl());
@@ -174,10 +185,10 @@ public class PetService {
             }
 
         } catch (IOException e) {
-            throw new RuntimeException("Failed to save file: " + e.getMessage());
+            throw new IllegalArgumentException("Failed to save file: " + e.getMessage());
         } catch (Exception e) {
             ZDebug.gI().logException("Failed to edit pet: " + e.getMessage(), e);
-            throw new RuntimeException("Failed to edit pet: " + e.getMessage());
+            throw new IllegalArgumentException(e.getMessage());
         }
     }
 
