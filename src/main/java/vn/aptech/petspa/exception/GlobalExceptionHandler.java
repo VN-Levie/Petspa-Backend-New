@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -66,5 +67,11 @@ public class GlobalExceptionHandler {
         logger.error("Unhandled exception: {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "Something went wrong"));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse> handleNotFound(NoResourceFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse(ApiResponse.STATUS_NOT_FOUND, "Resource not found"));
     }
 }

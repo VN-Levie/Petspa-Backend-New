@@ -293,7 +293,7 @@ public class AuthController {
             // Lưu OTP vào cache
             otpCache.put(email, otp);
             // Gửi email
-            String verificationLink = "http://localhost:8090/auth/verify?token=" + verificationToken;
+            String verificationLink = "http://localhost:8090/auth/api/verify?token=" + verificationToken;
             emailService.sendOtpMail(email, "Account Verification", otp, verificationLink);
             // Mã hóa mật khẩu và lưu user mới
             String encodedPassword = passwordEncoder.encode(registerDTO.getPassword());
@@ -351,7 +351,7 @@ public class AuthController {
         otpCache.put(email, otp); // Lưu OTP vào cache
 
         // Gửi email
-        String verificationLink = "http://localhost:8090/auth/verify?token=" + verificationToken;
+        String verificationLink = "http://localhost:8090/auth/api/verify?token=" + verificationToken;
         emailService.sendOtpMail(email, "Account Verification", otp, verificationLink);
         VerifyDTO verifyDTO = new VerifyDTO(user.getId(), email, user.isVerified());
         return ResponseEntity.ok(
@@ -489,7 +489,7 @@ public class AuthController {
         otpCache.put(newEmail, otp);
 
         // Gửi email
-        String verificationLink = "http://localhost:8090/auth/verify?token=" + verificationToken;
+        String verificationLink = "http://localhost:8090/auth/api/verify?token=" + verificationToken;
         emailService.sendOtpMail(newEmail, "Account Verification", otp, verificationLink);
         verifyDTO = new VerifyDTO(user.getId(), newEmail, user.isVerified());
         return ResponseEntity.ok(
