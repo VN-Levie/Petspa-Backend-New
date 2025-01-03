@@ -22,6 +22,18 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
     @EntityGraph(attributePaths = { "petType", "photos", "healths" })
     List<Pet> findByUserIdAndDeletedFalse(Long userId);
 
+    @EntityGraph(attributePaths = { "petType", "photos", "healths" })
+    Page<Pet> findByUserIdAndDeletedFalse(Long userId, Pageable pageable);
+
+    @EntityGraph(attributePaths = { "petType", "photos", "healths" })
+    Page<Pet> findByUserIdAndNameContainingAndPetTypeIdAndDeletedFalse(Long userId, String name, Long petTypeId, Pageable pageable);
+
+    @EntityGraph(attributePaths = { "petType", "photos", "healths" })
+    Page<Pet> findByUserIdAndNameContainingAndDeletedFalse(Long userId, String name, Pageable pageable);
+
+    @EntityGraph(attributePaths = { "petType", "photos", "healths" })
+    Page<Pet> findByUserIdAndPetTypeIdAndDeletedFalse(Long userId, Long petTypeId, Pageable pageable);
+
     boolean existsByNameAndUserIdAndDeletedFalse(String name, Long id);
 
     @NonNull
