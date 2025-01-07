@@ -19,21 +19,44 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
 
     List<Pet> findByUserId(Long id);
 
-    @EntityGraph(attributePaths = { "petType", "photos", "healths" })
-    List<Pet> findByUserIdAndDeletedFalse(Long userId);
+    @Query("SELECT new vn.aptech.petspa.dto.PetDTO(p.id, p.name, p.description, ph.height, ph.weight, " +
+            "p.user.id, p.avatarUrl, p.petType.id) " +
+            "FROM Pet p " +
+            "LEFT JOIN p.healths ph " +
+            "WHERE p.user.id = :userId AND NOT p.deleted " +
+            "AND ph.id = (SELECT MAX(ph2.id) FROM PetHealth ph2 WHERE ph2.pet.id = p.id)")
+    Page<PetDTO> findUserPets(@Param("userId") Long userId, Pageable pageable);
 
-    @EntityGraph(attributePaths = { "petType", "photos", "healths" })
-    Page<Pet> findByUserIdAndDeletedFalse(Long userId, Pageable pageable);
-
-    @EntityGraph(attributePaths = { "petType", "photos", "healths" })
-    Page<Pet> findByUserIdAndNameContainingAndPetTypeIdAndDeletedFalse(Long userId, String name, Long petTypeId,
+    @Query("SELECT new vn.aptech.petspa.dto.PetDTO(p.id, p.name, p.description, ph.height, ph.weight, " +
+            "p.user.id, p.avatarUrl, p.petType.id) " +
+            "FROM Pet p " +
+            "LEFT JOIN p.healths ph " +
+            "WHERE p.user.id = :userId AND p.name LIKE %:name% AND NOT p.deleted " +
+            "AND ph.id = (SELECT MAX(ph2.id) FROM PetHealth ph2 WHERE ph2.pet.id = p.id)")
+    Page<PetDTO> findUserPetsByName(@Param("userId") Long userId,
+            @Param("name") String name,
             Pageable pageable);
 
-    @EntityGraph(attributePaths = { "petType", "photos", "healths" })
-    Page<Pet> findByUserIdAndNameContainingAndDeletedFalse(Long userId, String name, Pageable pageable);
+    @Query("SELECT new vn.aptech.petspa.dto.PetDTO(p.id, p.name, p.description, ph.height, ph.weight, " +
+            "p.user.id, p.avatarUrl, p.petType.id) " +
+            "FROM Pet p " +
+            "LEFT JOIN p.healths ph " +
+            "WHERE p.user.id = :userId AND p.petType.id = :petTypeId AND NOT p.deleted " +
+            "AND ph.id = (SELECT MAX(ph2.id) FROM PetHealth ph2 WHERE ph2.pet.id = p.id)")
+    Page<PetDTO> findUserPetsByType(@Param("userId") Long userId,
+            @Param("petTypeId") Long petTypeId,
+            Pageable pageable);
 
-    @EntityGraph(attributePaths = { "petType", "photos", "healths" })
-    Page<Pet> findByUserIdAndPetTypeIdAndDeletedFalse(Long userId, Long petTypeId, Pageable pageable);
+    @Query("SELECT new vn.aptech.petspa.dto.PetDTO(p.id, p.name, p.description, ph.height, ph.weight, " +
+            "p.user.id, p.avatarUrl, p.petType.id) " +
+            "FROM Pet p " +
+            "LEFT JOIN p.healths ph " +
+            "WHERE p.user.id = :userId AND p.name LIKE %:name% AND p.petType.id = :petTypeId AND NOT p.deleted " +
+            "AND ph.id = (SELECT MAX(ph2.id) FROM PetHealth ph2 WHERE ph2.pet.id = p.id)")
+    Page<PetDTO> findUserPetsByNameAndType(@Param("userId") Long userId,
+            @Param("name") String name,
+            @Param("petTypeId") Long petTypeId,
+            Pageable pageable);
 
     boolean existsByNameAndUserIdAndDeletedFalse(String name, Long id);
 

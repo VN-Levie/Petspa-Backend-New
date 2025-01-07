@@ -42,18 +42,15 @@ public class PetService {
 
     @Transactional(readOnly = true)
     public Page<PetDTO> getUserPets(Long userId, String name, Long petTypeId, Pageable pageable) {
-        Page<Pet> pets;
         if (name != null && petTypeId != null) {
-            pets = petRepository.findByUserIdAndNameContainingAndPetTypeIdAndDeletedFalse(userId, name, petTypeId,
-                    pageable);
+            return petRepository.findUserPetsByNameAndType(userId, name, petTypeId, pageable);
         } else if (name != null) {
-            pets = petRepository.findByUserIdAndNameContainingAndDeletedFalse(userId, name, pageable);
+            return petRepository.findUserPetsByName(userId, name, pageable);
         } else if (petTypeId != null) {
-            pets = petRepository.findByUserIdAndPetTypeIdAndDeletedFalse(userId, petTypeId, pageable);
+            return petRepository.findUserPetsByType(userId, petTypeId, pageable);
         } else {
-            pets = petRepository.findByUserIdAndDeletedFalse(userId, pageable);
+            return petRepository.findUserPets(userId, pageable);
         }
-        return pets.map(pet -> new PetDTO(pet));
     }
 
     public List<Pet> retrievePetsForAdmin(Long userId) {

@@ -44,6 +44,18 @@ public class PetDTO {
         this.petTypeId = pet.getPetType().getId();
     }
 
+    public PetDTO(Long id, String name, String description, Double height, Double weight,
+                  Long userId, String avatarUrl, Long petTypeId) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.height = height;
+        this.weight = weight;
+        this.userId = userId;
+        this.avatarUrl = avatarUrl;
+        this.petTypeId = petTypeId;
+    }
+
     public PetDTO() {
         // No-args constructor
     }
