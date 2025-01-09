@@ -143,8 +143,58 @@ public class ShopProductService {
         return new ShopProductDTO(product.get());
     }
 
-    //get all categories
+    // get all categories
     public List<ShopCategoryDTO> retrieveCategories() {
         return shopCategoryRepository.findAllUndeleted();
     }
+
+    // get all categories
+    public List<ShopCategoryDTO> retrieveCategoriesAdmin() {
+        return shopCategoryRepository.findAllAdmin();
+    }
+
+    // add category
+    public void addCategory(ShopCategoryDTO categoryDTO) {
+        // check if category already exists
+        if (shopCategoryRepository.findByName(categoryDTO.getName()).isPresent()) {
+            throw new IllegalArgumentException("Category already exists");
+        }
+        ShopCategory category = new ShopCategory();
+        category.setName(categoryDTO.getName());
+        category.setDescription(categoryDTO.getDescription());
+
+        shopCategoryRepository.save(category);
+    }
+
+    // update category
+    public void updateCategory(ShopCategoryDTO categoryDTO) {
+
+        // Tìm danh mục hiện tại
+        ShopCategory category = shopCategoryRepository.findById(categoryDTO.getId())
+                .orElseThrow(() -> new NotFoundException("Category not found"));
+    
+        // Kiểm tra trùng lặp tên danh mục, loại trừ danh mục hiện tại
+        shopCategoryRepository.findByName(categoryDTO.getName())
+                .filter(existingCategory -> !existingCategory.getId().equals(category.getId()))
+                .ifPresent(existingCategory -> {
+                    throw new IllegalArgumentException("Category already exists");
+                });
+    
+        // Cập nhật danh mục
+        category.setName(categoryDTO.getName());
+        category.setDescription(categoryDTO.getDescription());
+    
+        // Lưu lại thay đổi
+        shopCategoryRepository.save(category);
+    }
+
+    // delete category
+    public void deleteCategory(Long categoryId) {
+        ShopCategory category = shopCategoryRepository.findById(categoryId)
+                .orElseThrow(() -> new NotFoundException("Category not found"));
+
+        shopCategoryRepository.softDelete(category.getId());
+    }
+    
+
 }

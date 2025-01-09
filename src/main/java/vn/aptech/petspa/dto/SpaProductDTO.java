@@ -3,6 +3,7 @@ package vn.aptech.petspa.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.aptech.petspa.entity.SpaProduct;
 
 import java.math.BigDecimal;
 
@@ -30,6 +31,16 @@ public class SpaProductDTO {
         this.imageUrl = imageUrl;
         this.category = category;
         this.description = description;
+    }
+
+    public SpaProductDTO(SpaProduct spaProduct) {
+        this.id = spaProduct.getId();
+        this.name = spaProduct.getName();
+        this.price = spaProduct.getPrice();
+        this.imageUrl = spaProduct.getImageUrl();
+        this.category = spaProduct.getCategory().getId();
+        this.description = spaProduct.getDescription();
+        this.deleted = spaProduct.getDeleted();
     }
 
 }

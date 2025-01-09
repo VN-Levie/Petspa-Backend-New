@@ -17,21 +17,21 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import vn.aptech.petspa.dto.ShopCategoryDTO;
-import vn.aptech.petspa.dto.ShopProductDTO;
-import vn.aptech.petspa.service.ShopProductService;
+import vn.aptech.petspa.dto.SpaCategoriesDTO;
+import vn.aptech.petspa.dto.SpaProductDTO;
+import vn.aptech.petspa.service.SpaService;
 import vn.aptech.petspa.util.ApiResponse;
 import vn.aptech.petspa.util.PagedApiResponse;
 
 @RestController
-@RequestMapping("/api/admin/shop-product")
-public class AdminShopProductController {
+@RequestMapping("/api/admin/spa-product")
+public class AdminSpaController {
 
     @Autowired
-    private ShopProductService shopProductService;
+    private SpaService spaService;
 
     @GetMapping("/list")
-    public ResponseEntity<ApiResponse> listShopProducts(
+    public ResponseEntity<ApiResponse> listSpaProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String name,
@@ -44,7 +44,7 @@ public class AdminShopProductController {
         Pageable pageable = PageRequest.of(page, size);
 
         try {
-            Page<ShopProductDTO> productDTOPage = shopProductService.getShopProducts(name, categoryId, pageable);
+            Page<SpaProductDTO> productDTOPage = spaService.getSpaProducts(name, categoryId, pageable);
             return ResponseEntity.ok(new PagedApiResponse(
                     "Successfully retrieved products",
                     productDTOPage.getContent(),
@@ -59,47 +59,47 @@ public class AdminShopProductController {
     }
 
     @PostMapping(value = "/add", consumes = { "multipart/form-data" })
-    public ResponseEntity<ApiResponse> addShopProduct(
+    public ResponseEntity<ApiResponse> addSpaProduct(
             @RequestHeader("Authorization") String token,
             @RequestParam("file") MultipartFile file,
             @RequestParam("productDTO") String productDTOJson) throws JsonProcessingException {
 
         ObjectMapper objectMapper = new ObjectMapper();
-        ShopProductDTO productDTO = objectMapper.readValue(productDTOJson, ShopProductDTO.class);
+        SpaProductDTO productDTO = objectMapper.readValue(productDTOJson, SpaProductDTO.class);
 
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("File is required");
         }
 
-        shopProductService.addShopProduct(null, productDTO, file);
+        spaService.addSpaProduct(null, productDTO, file);
 
         return ResponseEntity.ok(new ApiResponse("Add product successfully"));
     }
 
     @PostMapping(value = "/edit", consumes = { "multipart/form-data" })
-    public ResponseEntity<ApiResponse> editShopProduct(
+    public ResponseEntity<ApiResponse> editSpaProduct(
             @RequestHeader("Authorization") String token,
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam("productDTO") String productDTOJson) throws JsonProcessingException {
 
         ObjectMapper objectMapper = new ObjectMapper();
-        ShopProductDTO productDTO = objectMapper.readValue(productDTOJson, ShopProductDTO.class);
+        SpaProductDTO productDTO = objectMapper.readValue(productDTOJson, SpaProductDTO.class);
 
         if (file != null && !file.isEmpty()) {
-            shopProductService.editShopProductWithImage(null, productDTO, file);
+            spaService.editSpaProductWithImage(null, productDTO, file);
         } else {
-            shopProductService.editShopProductWithoutImage(null, productDTO);
+            spaService.editSpaProductWithoutImage(null, productDTO);
         }
 
         return ResponseEntity.ok(new ApiResponse("Edit product successfully"));
     }
 
     @PostMapping("/delete")
-    public ResponseEntity<ApiResponse> deleteShopProduct(
+    public ResponseEntity<ApiResponse> deleteSpaProduct(
             @RequestHeader("Authorization") String token,
-            @RequestBody ShopProductDTO productDTO) {
+            @RequestBody SpaProductDTO productDTO) {
 
-        shopProductService.deleteShopProduct(null, productDTO);
+        spaService.deleteSpaProduct(null, productDTO);
 
         return ResponseEntity.ok(new ApiResponse("Delete product successfully"));
     }
@@ -107,7 +107,7 @@ public class AdminShopProductController {
     // Get all categories
     @GetMapping("/categories")
     public ResponseEntity<ApiResponse> listCategories() {
-        return ResponseEntity.ok(new ApiResponse(shopProductService.retrieveCategoriesAdmin()));
+        return ResponseEntity.ok(new ApiResponse(spaService.retrieveCategoriesAdmin()));
     }
 
     // add category
@@ -117,9 +117,9 @@ public class AdminShopProductController {
             @RequestParam("categoryDTO") String categoryJson) throws JsonProcessingException {
 
         ObjectMapper objectMapper = new ObjectMapper();
-        ShopCategoryDTO categoryDTO = objectMapper.readValue(categoryJson, ShopCategoryDTO.class);
+        SpaCategoriesDTO categoryDTO = objectMapper.readValue(categoryJson, SpaCategoriesDTO.class);
 
-        shopProductService.addCategory(categoryDTO);
+        spaService.addCategory(categoryDTO);
 
         return ResponseEntity.ok(new ApiResponse("Add category successfully"));
     }
@@ -131,9 +131,9 @@ public class AdminShopProductController {
             @RequestParam("categoryDTO") String categoryJson) throws JsonProcessingException {
 
         ObjectMapper objectMapper = new ObjectMapper();
-        ShopCategoryDTO categoryDTO = objectMapper.readValue(categoryJson, ShopCategoryDTO.class);
+        SpaCategoriesDTO categoryDTO = objectMapper.readValue(categoryJson, SpaCategoriesDTO.class);
 
-        shopProductService.updateCategory(categoryDTO);
+        spaService.updateCategory(categoryDTO);
 
         return ResponseEntity.ok(new ApiResponse("Update category successfully"));
     }
@@ -144,7 +144,7 @@ public class AdminShopProductController {
             @RequestHeader("Authorization") String token,
             @RequestParam("categoryId") Long categoryId) {
 
-        shopProductService.deleteCategory(categoryId);
+        spaService.deleteCategory(categoryId);
         return ResponseEntity.ok(new ApiResponse("Delete category successfully"));
     }
 

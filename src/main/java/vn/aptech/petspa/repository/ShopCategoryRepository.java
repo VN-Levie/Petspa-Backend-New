@@ -27,4 +27,7 @@ public interface ShopCategoryRepository extends JpaRepository<ShopCategory, Long
 
     @Query("SELECT new vn.aptech.petspa.dto.ShopCategoryDTO(p.id, p.name, p.description) FROM ShopCategory p WHERE p.deleted = false")
     List<ShopCategoryDTO> findAllUndeleted();
+
+    @Query("SELECT new vn.aptech.petspa.dto.ShopCategoryDTO(p.id, p.name, p.description) FROM ShopCategory p")
+    List<ShopCategoryDTO> findAllAdmin();
 }
