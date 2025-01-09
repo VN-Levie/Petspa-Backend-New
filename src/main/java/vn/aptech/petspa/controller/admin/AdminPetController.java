@@ -96,22 +96,50 @@ public class AdminPetController {
 
     // add pet type
     @PostMapping("/pet-type")
-    public ResponseEntity<ApiResponse> addPetType(@RequestBody PetTypeDTO petTypeDTO) {
+    public ResponseEntity<ApiResponse> addPetType(
+            @RequestHeader("Authorization") String token,
+            @RequestParam("petDTO") String petDTOJson) throws JsonProcessingException {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        PetTypeDTO petTypeDTO = objectMapper.readValue(petDTOJson, PetTypeDTO.class);
+
+        // Check for duplicate pet type name
+        if (petService.isPetTypeNameExists(petTypeDTO.getName())) {
+            return ApiResponse.badRequest("Pet type name already exists");
+        }
+
         petService.addPetType(petTypeDTO);
         return ResponseEntity.ok(new ApiResponse("Successfully added pet type"));
     }
 
-    // delete pet type
-    @PostMapping("/pet-type/delete")
-    public ResponseEntity<ApiResponse> deletePetType(@RequestParam Long id) {
-        petService.deletePetType(id);
-        return ResponseEntity.ok(new ApiResponse("Successfully deleted pet type"));
-    }
-
     // update pet type
     @PostMapping("/pet-type/update")
-    public ResponseEntity<ApiResponse> updatePetType(@RequestBody PetTypeDTO petTypeDTO) {
+    public ResponseEntity<ApiResponse> updatePetType(
+            @RequestHeader("Authorization") String token,
+            @RequestParam("petTypeDTO") String petTypeJson) throws JsonProcessingException {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        PetTypeDTO petTypeDTO = objectMapper.readValue(petTypeJson, PetTypeDTO.class);
+
+        // Check for duplicate pet type name
+        if (petService.isPetTypeNameExists(petTypeDTO.getName())) {
+            return ApiResponse.badRequest("Pet type name already exists");
+        }
+
         petService.updatePetType(petTypeDTO);
         return ResponseEntity.ok(new ApiResponse("Successfully updated pet type"));
+    }
+
+    // delete pet type
+    @PostMapping("/pet-type/delete")
+    public ResponseEntity<ApiResponse> deletePetType(
+            @RequestHeader("Authorization") String token,
+            @RequestParam("petTypeDTO") String petTypeJson) throws JsonProcessingException {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        PetTypeDTO petTypeDTO = objectMapper.readValue(petTypeJson, PetTypeDTO.class);
+
+        petService.deletePetType(petTypeDTO.getId());
+        return ResponseEntity.ok(new ApiResponse("Successfully deleted pet type"));
     }
 }

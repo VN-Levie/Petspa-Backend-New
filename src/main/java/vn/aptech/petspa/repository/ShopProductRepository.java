@@ -15,10 +15,15 @@ import java.util.List;
 public interface ShopProductRepository extends JpaRepository<ShopProduct, Long> {
     List<ShopProduct> findByCategoryId(Long categoryId);
 
+    Page<ShopProduct> findByName(String name, Pageable pageable);
+
+    Page<ShopProduct> findByCategoryId(Long categoryId, Pageable pageable);
+
+    Page<ShopProduct> findByNameAndCategoryId(String name, Long categoryId, Pageable pageable);
+
     // soft delete
     @Modifying
     @Transactional
     @Query("UPDATE ShopProduct p SET p.deleted = true WHERE p.id = :id")
     void softDelete(Long id);
-
 }

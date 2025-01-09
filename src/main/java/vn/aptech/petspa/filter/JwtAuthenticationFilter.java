@@ -1,38 +1,28 @@
 package vn.aptech.petspa.filter;
 
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
-
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-
 import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.security.SignatureException;
-import vn.aptech.petspa.entity.User;
-import vn.aptech.petspa.repository.UserRepository;
-import vn.aptech.petspa.service.CustomUserDetailsService;
-import vn.aptech.petspa.util.JwtUtil;
-import vn.aptech.petspa.util.ZDebug;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
-import jakarta.annotation.Resource;
+import vn.aptech.petspa.repository.UserRepository;
+import vn.aptech.petspa.service.CustomUserDetailsService;
+import vn.aptech.petspa.util.JwtUtil;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {

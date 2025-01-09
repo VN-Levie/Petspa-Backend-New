@@ -272,6 +272,10 @@ public class PetService {
         petTypeRepository.save(petType);
     }
 
+    public boolean isPetTypeNameExists(String name) {
+        return petTypeRepository.findByName(name).isPresent();
+    }
+
     public Long countUserPet(Long userId) {
         // count pet
         return petRepository.countByUserIdAndDeletedFalse(userId);
