@@ -48,16 +48,10 @@ public class ShopProductController {
 
     @GetMapping("/list")
     public ResponseEntity<ApiResponse> listShopProducts(
-            @RequestHeader("Authorization") String token,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Long categoryId) {
-
-        Long userId = jwtUtil.extractUserId(token);
-        if (userId == 0) {
-            return ApiResponse.unauthorized("Invalid token");
-        }
 
         if (page < 0 || size <= 0) {
             return ApiResponse.badRequest("Invalid page or size values");
@@ -82,14 +76,7 @@ public class ShopProductController {
 
     // get product by id
     @GetMapping("/product")
-    public ResponseEntity<ApiResponse> getProductById(
-            @RequestHeader("Authorization") String token,
-            @RequestParam Long productId) {
-
-        Long userId = jwtUtil.extractUserId(token);
-        if (userId == 0) {
-            return ApiResponse.unauthorized("Invalid token");
-        }
+    public ResponseEntity<ApiResponse> getProductById(@RequestParam Long productId) {
 
         try {
             ShopProductDTO productDTO = shopProductService.getShopProductById(productId);
