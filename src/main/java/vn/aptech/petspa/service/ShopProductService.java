@@ -19,7 +19,6 @@ import vn.aptech.petspa.entity.User;
 import vn.aptech.petspa.repository.ShopCategoryRepository;
 import vn.aptech.petspa.repository.ShopProductRepository;
 
-
 @Service
 public class ShopProductService {
 
@@ -126,5 +125,18 @@ public class ShopProductService {
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
 
         shopProductRepository.softDelete(product.getId());
+    }
+
+    public ShopProductDTO getShopProductById(Long productId) {
+        Optional<ShopProduct> product = shopProductRepository.findById(productId);
+        if (product.isEmpty()) {
+            throw new IllegalArgumentException("Product not found");
+        }
+
+        if (product.get().getDeleted()) {
+            throw new IllegalArgumentException("Product is deleted");
+        }
+
+        return new ShopProductDTO(product.get());
     }
 }

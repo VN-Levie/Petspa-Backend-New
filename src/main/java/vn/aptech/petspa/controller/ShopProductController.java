@@ -80,70 +80,24 @@ public class ShopProductController {
         }
     }
 
-    @PostMapping(value = "/add", consumes = { "multipart/form-data" })
-    public ResponseEntity<ApiResponse> addShopProduct(
+    // get product by id
+    @GetMapping("/product")
+    public ResponseEntity<ApiResponse> getProductById(
             @RequestHeader("Authorization") String token,
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("productDTO") String productDTOJson) throws JsonProcessingException {
+            @RequestParam Long productId) {
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        ShopProductDTO productDTO = objectMapper.readValue(productDTOJson, ShopProductDTO.class);
-
-        String email = jwtUtil.extractEmail(token);
-        if (!shopCategoryRepository.existsById(productDTO.getCategoryId())) {
-            throw new IllegalArgumentException("Category does not exist");
+        Long userId = jwtUtil.extractUserId(token);
+        if (userId == 0) {
+            return ApiResponse.unauthorized("Invalid token");
         }
 
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("File is required");
+        try {
+            ShopProductDTO productDTO = shopProductService.getShopProductById(productId);
+            return ResponseEntity.ok(new ApiResponse(productDTO));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.badRequest(e.getMessage());
         }
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        shopProductService.addShopProduct(user, productDTO, file);
-
-        return ResponseEntity.ok(new ApiResponse("Add product successfully"));
     }
 
-    @PostMapping(value = "/edit", consumes = { "multipart/form-data" })
-    public ResponseEntity<ApiResponse> editShopProduct(
-            @RequestHeader("Authorization") String token,
-            @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestParam("productDTO") String productDTOJson) throws JsonProcessingException {
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        ShopProductDTO productDTO = objectMapper.readValue(productDTOJson, ShopProductDTO.class);
-
-        String email = jwtUtil.extractEmail(token);
-
-        if (!shopCategoryRepository.existsById(productDTO.getCategoryId())) {
-            throw new IllegalArgumentException("Category does not exist");
-        }
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        if (file != null && !file.isEmpty()) {
-            shopProductService.editShopProductWithImage(user, productDTO, file);
-        } else {
-            shopProductService.editShopProductWithoutImage(user, productDTO);
-        }
-
-        return ResponseEntity.ok(new ApiResponse("Edit product successfully"));
-    }
-
-    @PostMapping("/delete")
-    public ResponseEntity<ApiResponse> deleteShopProduct(
-            @RequestHeader("Authorization") String token,
-            @RequestBody ShopProductDTO productDTO) {
-
-        String email = jwtUtil.extractEmail(token);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        shopProductService.deleteShopProduct(user, productDTO);
-
-        return ResponseEntity.ok(new ApiResponse("Delete product successfully"));
-    }
 }

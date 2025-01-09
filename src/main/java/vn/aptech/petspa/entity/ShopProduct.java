@@ -24,6 +24,9 @@ public class ShopProduct extends BaseEntity {
     @Column(nullable = false)
     private String imageUrl;
 
+    @Column(nullable = true)
+    private String description;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", nullable = false)
     private ShopCategory category;
