@@ -41,7 +41,7 @@ public class ShopProductService {
         } else if (categoryId != null) {
             return shopProductRepository.findByCategoryId(categoryId, pageable);
         } else {
-            return shopProductRepository.findAll(pageable);
+            return shopProductRepository.findAllUndeleted(pageable);
         }
     }
 
