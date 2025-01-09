@@ -1,6 +1,7 @@
 package vn.aptech.petspa.service;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +13,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import vn.aptech.petspa.dto.ShopCategoryDTO;
 import vn.aptech.petspa.dto.ShopProductDTO;
 import vn.aptech.petspa.entity.ShopCategory;
 import vn.aptech.petspa.entity.ShopProduct;
 import vn.aptech.petspa.entity.User;
+import vn.aptech.petspa.exception.NotFoundException;
 import vn.aptech.petspa.repository.ShopCategoryRepository;
 import vn.aptech.petspa.repository.ShopProductRepository;
 
@@ -109,12 +112,12 @@ public class ShopProductService {
     @Transactional
     public void editShopProductWithoutImage(User user, ShopProductDTO productDTO) {
         ShopProduct product = shopProductRepository.findById(productDTO.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+                .orElseThrow(() -> new NotFoundException("Product not found"));
 
         product.setName(productDTO.getName());
         product.setPrice(productDTO.getPrice());
         product.setCategory(shopCategoryRepository.findById(productDTO.getCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("Category not found")));
+                .orElseThrow(() -> new NotFoundException("Category not found")));
 
         shopProductRepository.save(product);
     }
@@ -122,7 +125,7 @@ public class ShopProductService {
     @Transactional
     public void deleteShopProduct(User user, ShopProductDTO productDTO) {
         ShopProduct product = shopProductRepository.findById(productDTO.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+                .orElseThrow(() -> new NotFoundException("Product not found"));
 
         shopProductRepository.softDelete(product.getId());
     }
@@ -130,13 +133,18 @@ public class ShopProductService {
     public ShopProductDTO getShopProductById(Long productId) {
         Optional<ShopProduct> product = shopProductRepository.findById(productId);
         if (product.isEmpty()) {
-            throw new IllegalArgumentException("Product not found");
+            throw new NotFoundException("Product not found");
         }
 
         if (product.get().getDeleted()) {
-            throw new IllegalArgumentException("Product is deleted");
+            throw new NotFoundException("Product not found");
         }
 
         return new ShopProductDTO(product.get());
+    }
+
+    //get all categories
+    public List<ShopCategoryDTO> retrieveCategories() {
+        return shopCategoryRepository.findAllUndeleted();
     }
 }

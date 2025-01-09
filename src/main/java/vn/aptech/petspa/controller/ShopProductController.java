@@ -19,9 +19,12 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import vn.aptech.petspa.dto.ShopCategoryDTO;
 import vn.aptech.petspa.dto.ShopProductDTO;
+import vn.aptech.petspa.entity.ShopCategory;
 import vn.aptech.petspa.entity.ShopProduct;
 import vn.aptech.petspa.entity.User;
+import vn.aptech.petspa.exception.NotFoundException;
 import vn.aptech.petspa.repository.ShopCategoryRepository;
 import vn.aptech.petspa.repository.ShopProductRepository;
 import vn.aptech.petspa.repository.UserRepository;
@@ -31,7 +34,7 @@ import vn.aptech.petspa.util.JwtUtil;
 import vn.aptech.petspa.util.PagedApiResponse;
 
 @RestController
-@RequestMapping("/api/shop-product")
+@RequestMapping("/api/public/shop-product")
 public class ShopProductController {
 
     @Autowired
@@ -49,7 +52,7 @@ public class ShopProductController {
     @GetMapping("/list")
     public ResponseEntity<ApiResponse> listShopProducts(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "50") int size,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Long categoryId) {
 
@@ -81,6 +84,42 @@ public class ShopProductController {
         try {
             ShopProductDTO productDTO = shopProductService.getShopProductById(productId);
             return ResponseEntity.ok(new ApiResponse(productDTO));
+        } catch (NotFoundException e) {
+            return ApiResponse.notFound(e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.badRequest(e.getMessage());
+        }
+    }
+
+    // get categories
+    @GetMapping("/categories")
+    public ResponseEntity<ApiResponse> listCategories() {
+        List<ShopCategoryDTO> categories = shopProductService.retrieveCategories();
+        return ResponseEntity.ok(new ApiResponse(categories));
+    }
+
+    // get product by category
+    @GetMapping("/category")
+    public ResponseEntity<ApiResponse> listProductsByCategory(
+            @RequestParam Long categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+
+        if (page < 0 || size <= 0) {
+            return ApiResponse.badRequest("Invalid page or size values");
+        }
+        size = Math.min(size, 100);
+        Pageable pageable = PageRequest.of(page, size);
+
+        try {
+            Page<ShopProductDTO> productDTOPage = shopProductService.getShopProducts(null, categoryId, pageable);
+            return ResponseEntity.ok(new PagedApiResponse(
+                    "Successfully retrieved products",
+                    productDTOPage.getContent(),
+                    productDTOPage.getNumber(),
+                    productDTOPage.getSize(),
+                    productDTOPage.getTotalElements(),
+                    productDTOPage.getTotalPages()));
         } catch (Exception e) {
             e.printStackTrace();
             return ApiResponse.badRequest(e.getMessage());
