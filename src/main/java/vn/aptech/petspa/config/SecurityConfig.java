@@ -50,8 +50,10 @@ public class SecurityConfig {
                     auth.requestMatchers(
                             "/auth/**", // Endpoint auth
                             "/api/auth/**", // Endpoint auth
+                            "/api/map/**", // Endpoint auth
                             "/api/public/**", // Public API
                             "/swagger-ui/**", // Swagger
+                            "/api-docs/**", // Swagger
                             "/v3/api-docs/**", // Swagger docs
                             "/uploads/**" // Upload files
                     ).permitAll(); // Không yêu cầu xác thực
