@@ -132,7 +132,7 @@ public class AzureMapService {
                     });
             String country = (String) addressInfo.get("country");
             ZDebug.gI().ZigDebug("country: " + country);
-            String[] vietNamEx = { "Việt Nam", "Vietnam" };
+            String[] vietNamEx = { "Việt Nam", "Vietnam", "Viet Nam", "VN" };
             boolean isVietNam = false;
             for (String s : vietNamEx) {
                 if (country.equalsIgnoreCase(s)) {
