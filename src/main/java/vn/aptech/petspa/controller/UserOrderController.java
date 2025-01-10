@@ -38,5 +38,41 @@ import vn.aptech.petspa.util.ZDebug;
 @RestController
 @RequestMapping("/api/user-order")
 public class UserOrderController {
+    @Autowired
+    private JwtUtil jwtUtil;
 
+    @GetMapping("/list")
+    public ResponseEntity<ApiResponse> listUserPet(
+            @RequestHeader("Authorization") String token,
+            @RequestParam(defaultValue = "0") int page, // Trang mặc định là 0
+            @RequestParam(defaultValue = "10") int size, // Kích thước mặc định là 10
+            @RequestParam(required = false) String name, // Tìm kiếm theo tên (không bắt buộc)
+            @RequestParam(required = false) Long petTypeId // Lọc theo loại pet (không bắt buộc)
+    ) {
+        Long userId = jwtUtil.extractUserId(token);
+        if (userId == 0) {
+            return ApiResponse.unauthorized("Invalid token");
+        }
+
+        if (page < 0 || size <= 0) {
+            return ApiResponse.badRequest("Invalid page or size values");
+        }
+        size = Math.min(size, 100); // Giới hạn kích thước trang tối đa là 100
+        Pageable pageable = PageRequest.of(page, size); // Tạo Pageable object
+
+        try {
+            Page<PetDTO> petDTOPage = petService.getUserPets(userId, name, petTypeId, pageable);
+            return ResponseEntity.ok(new PagedApiResponse(
+                    "Successfully retrieved pets",
+                    petDTOPage.getContent(), // Danh sách pets
+                    petDTOPage.getNumber(), // Trang hiện tại
+                    petDTOPage.getSize(), // Kích thước mỗi trang
+                    petDTOPage.getTotalElements(), // Tổng số bản ghi
+                    petDTOPage.getTotalPages() // Tổng số trang
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.badRequest(e.getMessage());
+        }
+    }
 }

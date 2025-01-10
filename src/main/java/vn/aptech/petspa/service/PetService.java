@@ -39,6 +39,7 @@ public class PetService {
 
     @Autowired
     private FileService fileService;
+    
 
     @Transactional(readOnly = true)
     public Page<PetDTO> getUserPets(Long userId, String name, Long petTypeId, Pageable pageable) {
