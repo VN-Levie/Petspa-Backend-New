@@ -114,9 +114,19 @@ public class AzureMapController {
                 // }
 
                 // Calculate shipping fee
-                double fixedFee = 3; // Phí cố định: $5
-                double ratePerKm = 1.1; // Đơn giá mỗi km: $1.5
+                double fixedFee = 0.5; // Phí cố định: $5
+                double ratePerKm = 0.05; // Đơn giá mỗi km: $1.5
                 double shippingFee = fixedFee + (ratePerKm * distanceInKm);
+
+                //dưới 3km thì phí shop là 0.5$
+                if (distanceInKm < 3) {
+                    shippingFee = 0.5;
+                }
+
+                //nếu trên 100km thì phí cố định là $20
+                if (distanceInKm > 100) {
+                    shippingFee = 10;
+                }
 
                 // Format result
                 Map<String, Object> result = new HashMap<>();

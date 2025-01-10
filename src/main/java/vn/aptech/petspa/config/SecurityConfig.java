@@ -50,6 +50,7 @@ public class SecurityConfig {
                     auth.requestMatchers(
                             "/auth/**", // Endpoint auth
                             "/api/auth/**", // Endpoint auth
+                            "/api/payment/**", // Endpoint auth
                             "/api/map/**", // Endpoint auth
                             "/api/public/**", // Public API
                             "/swagger-ui/**", // Swagger
