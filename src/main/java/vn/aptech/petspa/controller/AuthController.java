@@ -27,11 +27,16 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.benmanes.caffeine.cache.Cache;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.validation.Valid;
+import vn.aptech.petspa.dto.AddressBookDTO;
 import vn.aptech.petspa.dto.LoginDTO;
 import vn.aptech.petspa.dto.RegisterDTO;
 import vn.aptech.petspa.dto.UserDTO;
@@ -39,9 +44,12 @@ import vn.aptech.petspa.dto.VerifyDTO;
 import vn.aptech.petspa.entity.User;
 import vn.aptech.petspa.repository.UserRepository;
 import vn.aptech.petspa.service.EmailService;
+import vn.aptech.petspa.service.UserExtendService;
 import vn.aptech.petspa.util.ApiResponse;
 import vn.aptech.petspa.util.JwtUtil;
+import vn.aptech.petspa.util.PagedApiResponse;
 import vn.aptech.petspa.util.ZDebug;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -69,6 +77,9 @@ public class AuthController {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private UserExtendService userExtendService;
 
     @Autowired
     private Cache<String, Integer> otpAttemptCache; // Inject cache đếm số lần gửi lại OTP
@@ -523,6 +534,155 @@ public class AuthController {
 
             userDTO.setRole(user.getRoles().stream().findFirst().orElse("User"));
             return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, "Get profile successfully.", userDTO));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "An error occurred.", null));
+        }
+    }
+
+    // api/auth/bookaddress | get | get all address
+    @GetMapping("/bookaddress")
+    public ResponseEntity<ApiResponse> bookAddress(@RequestHeader("Authorization") String token,
+            @RequestParam(defaultValue = "0") int page, // Trang mặc định là 0
+            @RequestParam(defaultValue = "10") int size // Kích thước mặc định là 10
+    ) {
+        ZDebug.gI().ZigDebug("bookAddress");
+        try {
+            if (token == null || token.isEmpty()) {
+                return ApiResponse.unauthorized("Invalid token");
+            }
+            token = jwtUtil.extractToken(token);
+            String email = null;
+            try {
+                email = jwtUtil.extractEmail(token);
+            } catch (Exception e) {
+                ApiResponse.unauthorized("Invalid token");
+            }
+            User user = userRepository.findByEmail(email).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "bookAddress. User not found.", null));
+            }
+            if (page < 0 || size <= 0) {
+                return ApiResponse.badRequest("Invalid page or size values");
+            }
+            size = Math.min(size, 100); // Giới hạn kích thước trang tối đa là 100
+            Pageable pageable = PageRequest.of(page, size); // Tạo Pageable object
+
+            try {
+                Page<AddressBookDTO> addressBookDTOpage = userExtendService.getUserAddressBook(user.getId(), pageable);
+                return ResponseEntity.ok(new PagedApiResponse(
+                        "Successfully retrieved address book", // Thông điệp
+                        addressBookDTOpage.getContent(), // Danh sách pets
+                        addressBookDTOpage.getNumber(), // Trang hiện tại
+                        addressBookDTOpage.getSize(), // Kích thước mỗi trang
+                        addressBookDTOpage.getTotalElements(), // Tổng số bản ghi
+                        addressBookDTOpage.getTotalPages() // Tổng số trang
+                ));
+            } catch (Exception e) {
+                e.printStackTrace();
+                return ApiResponse.badRequest(e.getMessage());
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "An error occurred.", null));
+        }
+    }
+
+    // api/auth/bookaddress/add | post | add address
+    @PostMapping("/bookaddress/add")
+    public ResponseEntity<ApiResponse> addBookAddress(@RequestHeader("Authorization") String token,
+            @RequestParam("addressBookDTO") String addressBookJson) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        AddressBookDTO addressBookDTO = objectMapper.readValue(addressBookJson, AddressBookDTO.class);
+        ZDebug.gI().ZigDebug("addBookAddress");
+        try {
+            if (token == null || token.isEmpty()) {
+                return ApiResponse.unauthorized("Invalid token");
+            }
+            token = jwtUtil.extractToken(token);
+            String email = null;
+            try {
+                email = jwtUtil.extractEmail(token);
+            } catch (Exception e) {
+                ApiResponse.unauthorized("Invalid token");
+            }
+            User user = userRepository.findByEmail(email).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "addBookAddress. User not found.",
+                                null));
+            }
+            addressBookDTO.setUserId(user.getId());
+            userExtendService.addAddressBook(addressBookDTO);
+            return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, "Add address book successfully.", null));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "An error occurred.", null));
+        }
+    }
+
+    // api/auth/bookaddress/delete | post | delete address
+    @PostMapping("/bookaddress/delete")
+    public ResponseEntity<ApiResponse> deleteBookAddress(@RequestHeader("Authorization") String token,
+            @RequestParam("addressBookDTO") String addressBookDTOJson) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        AddressBookDTO addressBookDTO = objectMapper.readValue(addressBookDTOJson, AddressBookDTO.class);
+        ZDebug.gI().ZigDebug("deleteBookAddress");
+        try {
+            if (token == null || token.isEmpty()) {
+                return ApiResponse.unauthorized("Invalid token");
+            }
+            token = jwtUtil.extractToken(token);
+            String email = null;
+            try {
+                email = jwtUtil.extractEmail(token);
+            } catch (Exception e) {
+                ApiResponse.unauthorized("Invalid token");
+            }
+            User user = userRepository.findByEmail(email).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "deleteBookAddress. User not found.",
+                                null));
+            }
+            userExtendService.deleteAddressBook(addressBookDTO);
+            return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, "Delete address book successfully.", null));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "An error occurred.", null));
+        }
+    }
+
+    // api/auth/bookaddress/update | post | update address
+    @PostMapping("/bookaddress/edit")
+    public ResponseEntity<ApiResponse> updateBookAddress(@RequestHeader("Authorization") String token,
+            @RequestParam("addressBookDTO") String addressBookDTOJson) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        AddressBookDTO addressBookDTO = objectMapper.readValue(addressBookDTOJson, AddressBookDTO.class);
+        ZDebug.gI().ZigDebug("updateBookAddress");
+        try {
+            if (token == null || token.isEmpty()) {
+                return ApiResponse.unauthorized("Invalid token");
+            }
+            token = jwtUtil.extractToken(token);
+            String email = null;
+            try {
+                email = jwtUtil.extractEmail(token);
+            } catch (Exception e) {
+                ApiResponse.unauthorized("Invalid token");
+            }
+            User user = userRepository.findByEmail(email).orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "updateBookAddress. User not found.",
+                                null));
+            }
+            addressBookDTO.setUserId(user.getId());
+            userExtendService.addAddressBook(addressBookDTO);
+            return ResponseEntity.ok(new ApiResponse(ApiResponse.STATUS_OK, "Update address book successfully.", null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR, "An error occurred.", null));
