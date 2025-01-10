@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import vn.aptech.petspa.dto.AddressBookDTO;
+import vn.aptech.petspa.dto.OrderDTO;
 import vn.aptech.petspa.dto.SpaCategoriesDTO;
 import vn.aptech.petspa.dto.SpaProductDTO;
 import vn.aptech.petspa.entity.AddressBook;
@@ -22,6 +23,7 @@ import vn.aptech.petspa.entity.SpaProduct;
 import vn.aptech.petspa.entity.User;
 import vn.aptech.petspa.exception.NotFoundException;
 import vn.aptech.petspa.repository.AddressBookRepository;
+import vn.aptech.petspa.repository.OrderRepository;
 import vn.aptech.petspa.repository.PetHealthRepository;
 import vn.aptech.petspa.repository.PetPhotoRepository;
 import vn.aptech.petspa.repository.PetRepository;
@@ -56,7 +58,32 @@ public class OrderService {
 
     @Autowired
     private SpaProductRepository spaProductRepository;
+    
+    @Autowired
+    private OrderRepository orderRepository;
 
     @Autowired
     private FileService fileService;
+
+    @Transactional(readOnly = true)
+    public Page<OrderDTO> getUserOrder(Long userId, String search, String goodsType, String date, Pageable pageable) {
+        if(search != null && goodsType != null && date != null) {
+            return orderRepository.findByUserIdAndSearchAndGoodsTypeAndDate(userId, search, goodsType, date, pageable);
+        } else if(search != null && goodsType != null) {
+            return orderRepository.findByUserIdAndSearchAndGoodsType(userId, search, goodsType, pageable);
+        } else if(search != null && date != null) {
+            return orderRepository.findByUserIdAndSearchAndDate(userId, search, date, pageable);
+        } else if(goodsType != null && date != null) {
+            return orderRepository.findByUserIdAndGoodsTypeAndDate(userId, goodsType, date, pageable);
+        } else if(search != null) {
+            return orderRepository.findByUserIdAndSearch(userId, search, pageable);
+        } else if(goodsType != null) {
+            return orderRepository.findByUserIdAndGoodsType(userId, goodsType, pageable);
+        } else if(date != null) {
+            return orderRepository.findByUserIdAndDate(userId, date, pageable);
+        } else {
+            return orderRepository.findByUserId(userId, pageable);
+        }
+
+    }
 }

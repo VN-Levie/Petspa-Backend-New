@@ -23,12 +23,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.JwtException;
+import vn.aptech.petspa.dto.OrderDTO;
 import vn.aptech.petspa.dto.PetDTO;
 import vn.aptech.petspa.entity.Pet;
 import vn.aptech.petspa.entity.User;
 import vn.aptech.petspa.repository.PetRepository;
 import vn.aptech.petspa.repository.PetTypeRepository;
 import vn.aptech.petspa.repository.UserRepository;
+import vn.aptech.petspa.service.OrderService;
 import vn.aptech.petspa.service.PetService;
 import vn.aptech.petspa.util.ApiResponse;
 import vn.aptech.petspa.util.JwtUtil;
@@ -40,14 +42,18 @@ import vn.aptech.petspa.util.ZDebug;
 public class UserOrderController {
     @Autowired
     private JwtUtil jwtUtil;
+    
+    @Autowired
+    private OrderService orderService;
 
     @GetMapping("/list")
     public ResponseEntity<ApiResponse> listUserPet(
             @RequestHeader("Authorization") String token,
             @RequestParam(defaultValue = "0") int page, // Trang mặc định là 0
             @RequestParam(defaultValue = "10") int size, // Kích thước mặc định là 10
-            @RequestParam(required = false) String name, // Tìm kiếm theo tên (không bắt buộc)
-            @RequestParam(required = false) Long petTypeId // Lọc theo loại pet (không bắt buộc)
+            @RequestParam(required = false) String date, // Tìm kiếm theo tên (không bắt buộc)
+            @RequestParam(required = false) String search, // Tìm kiếm theo tên (không bắt buộc)
+            @RequestParam(required = false) String goodsType // Lọc theo loại pet (không bắt buộc)
     ) {
         Long userId = jwtUtil.extractUserId(token);
         if (userId == 0) {
@@ -61,14 +67,14 @@ public class UserOrderController {
         Pageable pageable = PageRequest.of(page, size); // Tạo Pageable object
 
         try {
-            Page<PetDTO> petDTOPage = petService.getUserPets(userId, name, petTypeId, pageable);
+            Page<OrderDTO> orderDTOPage = orderService.getUserOrder(userId, search, goodsType, date, pageable);
             return ResponseEntity.ok(new PagedApiResponse(
                     "Successfully retrieved pets",
-                    petDTOPage.getContent(), // Danh sách pets
-                    petDTOPage.getNumber(), // Trang hiện tại
-                    petDTOPage.getSize(), // Kích thước mỗi trang
-                    petDTOPage.getTotalElements(), // Tổng số bản ghi
-                    petDTOPage.getTotalPages() // Tổng số trang
+                    orderDTOPage.getContent(), // Danh sách pets
+                    orderDTOPage.getNumber(), // Trang hiện tại
+                    orderDTOPage.getSize(), // Kích thước mỗi trang
+                    orderDTOPage.getTotalElements(), // Tổng số bản ghi
+                    orderDTOPage.getTotalPages() // Tổng số trang
             ));
         } catch (Exception e) {
             e.printStackTrace();
