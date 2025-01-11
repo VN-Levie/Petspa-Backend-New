@@ -35,6 +35,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.benmanes.caffeine.cache.Cache;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
 import vn.aptech.petspa.dto.AddressBookDTO;
 import vn.aptech.petspa.dto.LoginDTO;
@@ -50,6 +51,7 @@ import vn.aptech.petspa.util.JwtUtil;
 import vn.aptech.petspa.util.PagedApiResponse;
 import vn.aptech.petspa.util.ZDebug;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.core.env.Environment;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -83,6 +85,16 @@ public class AuthController {
 
     @Autowired
     private Cache<String, Integer> otpAttemptCache; // Inject cache đếm số lần gửi lại OTP
+
+    @Autowired
+    private Environment environment;
+
+    private String port;
+
+    @PostConstruct
+    public void init() {
+        this.port = environment.getProperty("server.port");
+    }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse> login(@Valid @RequestBody LoginDTO loginDTO) {
@@ -304,7 +316,7 @@ public class AuthController {
             // Lưu OTP vào cache
             otpCache.put(email, otp);
             // Gửi email
-            String verificationLink = "http://localhost:8090/auth/api/verify?token=" + verificationToken;
+            String verificationLink = "http://localhost:" + port + "/api/auth/verify?token=" + verificationToken;
             emailService.sendOtpMail(email, "Account Verification", otp, verificationLink);
             // Mã hóa mật khẩu và lưu user mới
             String encodedPassword = passwordEncoder.encode(registerDTO.getPassword());
@@ -362,7 +374,7 @@ public class AuthController {
         otpCache.put(email, otp); // Lưu OTP vào cache
 
         // Gửi email
-        String verificationLink = "http://localhost:8090/auth/api/verify?token=" + verificationToken;
+        String verificationLink = "http://localhost:" + port + "/api/auth/verify?token=" + verificationToken;
         emailService.sendOtpMail(email, "Account Verification", otp, verificationLink);
         VerifyDTO verifyDTO = new VerifyDTO(user.getId(), email, user.isVerified());
         return ResponseEntity.ok(
@@ -500,7 +512,7 @@ public class AuthController {
         otpCache.put(newEmail, otp);
 
         // Gửi email
-        String verificationLink = "http://localhost:8090/auth/api/verify?token=" + verificationToken;
+        String verificationLink = "http://localhost:" + port + "/api/auth/verify?token=" + verificationToken;
         emailService.sendOtpMail(newEmail, "Account Verification", otp, verificationLink);
         verifyDTO = new VerifyDTO(user.getId(), newEmail, user.isVerified());
         return ResponseEntity.ok(

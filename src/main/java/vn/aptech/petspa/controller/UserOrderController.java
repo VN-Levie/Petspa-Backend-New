@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.JwtException;
 import vn.aptech.petspa.dto.OrderDTO;
+import vn.aptech.petspa.dto.OrderRequestDTO;
 import vn.aptech.petspa.dto.PetDTO;
 import vn.aptech.petspa.entity.Pet;
 import vn.aptech.petspa.entity.User;
@@ -42,7 +43,7 @@ import vn.aptech.petspa.util.ZDebug;
 public class UserOrderController {
     @Autowired
     private JwtUtil jwtUtil;
-    
+
     @Autowired
     private OrderService orderService;
 
@@ -80,5 +81,16 @@ public class UserOrderController {
             e.printStackTrace();
             return ApiResponse.badRequest(e.getMessage());
         }
+    }
+
+    @PostMapping(value = "/createOrder", consumes = { "multipart/form-data" })
+    public ResponseEntity<ApiResponse> addUserPet(
+            @RequestHeader("Authorization") String token,
+            @RequestParam("orderRequestDTO") String orderJson) throws JsonProcessingException {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        OrderRequestDTO parsedorderDTO = objectMapper.readValue(orderJson, OrderRequestDTO.class);
+        ZDebug.gI().ZigDebug(parsedorderDTO.toString());
+        return ResponseEntity.ok(new ApiResponse("Add pet successfully"));
     }
 }

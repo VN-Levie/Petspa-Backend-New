@@ -41,11 +41,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
 import vn.aptech.petspa.dto.LoginDTO;
 import vn.aptech.petspa.dto.PaymentDTO;
@@ -59,6 +61,8 @@ import vn.aptech.petspa.util.ApiResponse;
 import vn.aptech.petspa.util.JwtUtil;
 import vn.aptech.petspa.util.ZDebug;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @RequestMapping("/api/payment")
@@ -75,6 +79,15 @@ public class PaymentController {
 
     @Value("${vnpay.vnp_HashSecret}")
     private String vnp_HashSecret;
+
+    @Autowired
+    private Environment environment;
+    private String port;
+
+    @PostConstruct
+    public void init() {
+        this.port = environment.getProperty("server.port");
+    }
 
     public static String getRandomNumber(int len) {
         Random rnd = new Random();
@@ -110,8 +123,12 @@ public class PaymentController {
     }
 
     @PostMapping("/create-payment")
-    public ResponseEntity<ApiResponse> login(@Valid @RequestBody PaymentDTO paymentDTO) {
+    public ResponseEntity<ApiResponse> addUserPet(
+
+            @RequestParam("paymentDTO") String paymentRequestJson) throws JsonProcessingException {
         try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            PaymentDTO paymentDTO = objectMapper.readValue(paymentRequestJson, PaymentDTO.class);
             long amount = paymentDTO.getAmount() * 100;
             String bankCode = paymentDTO.getBankCode();
             String vnp_TxnRef = getRandomNumber(8);
@@ -137,7 +154,7 @@ public class PaymentController {
             } else {
                 vnp_Params.put("vnp_Locale", "vn");
             }
-            vnp_Params.put("vnp_ReturnUrl", "http://localhost:8090/api/payment/vnpay_ipn");
+            vnp_Params.put("vnp_ReturnUrl", "http://localhost:" + port + "/api/payment/vnpay_ipn");
             vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
             Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
             SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -188,7 +205,7 @@ public class PaymentController {
             ApiResponse response = new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Invalid email or password!", null);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (Exception e) {
-
+            e.printStackTrace();
             ApiResponse response = new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR,
                     "An error occurred during login process", null);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
@@ -259,7 +276,8 @@ public class PaymentController {
             } else {
                 ZDebug.gI().ZigDebug("Invalid hash: " + signValue + " - " + vnp_SecureHash);
             }
-            //checkOrderStatus: 00: Thanh toán thành công, 01: Thanh toán thất bại, 02: Đã hủy, 03: Đang chờ xử lý
+            // checkOrderStatus: 00: Thanh toán thành công, 01: Thanh toán thất bại, 02: Đã
+            // hủy, 03: Đang chờ xử lý
             return ResponseEntity.ok(new ApiResponse(allParams));
         } catch (Exception e) {
             return ResponseEntity.ok(new ApiResponse("error"));
