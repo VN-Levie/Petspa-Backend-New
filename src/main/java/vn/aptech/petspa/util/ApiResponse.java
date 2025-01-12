@@ -33,6 +33,10 @@ public class ApiResponse {
         this(STATUS_OK, "Success", data);
     }
 
+    public ApiResponse(String message, Object data) {
+        this(STATUS_OK, message, data);
+    }
+
     public static ResponseEntity<ApiResponse> badRequest(String message) {
         return ResponseEntity.badRequest()
                 .body(new ApiResponse(STATUS_BAD_REQUEST, message));

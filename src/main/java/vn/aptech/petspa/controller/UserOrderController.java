@@ -90,7 +90,9 @@ public class UserOrderController {
 
         ObjectMapper objectMapper = new ObjectMapper();
         OrderRequestDTO parsedorderDTO = objectMapper.readValue(orderJson, OrderRequestDTO.class);
-        ZDebug.gI().ZigDebug(parsedorderDTO.toString());
-        return ResponseEntity.ok(new ApiResponse("Add pet successfully"));
+        ZDebug.gI().ZigDebug(parsedorderDTO.toJsonString());
+
+        orderService.createOrder(parsedorderDTO);
+        return ResponseEntity.ok(new ApiResponse("Create order successfully", parsedorderDTO));
     }
 }

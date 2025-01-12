@@ -15,9 +15,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import vn.aptech.petspa.dto.AddressBookDTO;
 import vn.aptech.petspa.dto.OrderDTO;
+import vn.aptech.petspa.dto.OrderRequestDTO;
 import vn.aptech.petspa.dto.SpaCategoriesDTO;
 import vn.aptech.petspa.dto.SpaProductDTO;
 import vn.aptech.petspa.entity.AddressBook;
+import vn.aptech.petspa.entity.Order;
 import vn.aptech.petspa.entity.SpaCategory;
 import vn.aptech.petspa.entity.SpaProduct;
 import vn.aptech.petspa.entity.User;
@@ -58,7 +60,7 @@ public class OrderService {
 
     @Autowired
     private SpaProductRepository spaProductRepository;
-    
+
     @Autowired
     private OrderRepository orderRepository;
 
@@ -67,23 +69,34 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public Page<OrderDTO> getUserOrder(Long userId, String search, String goodsType, String date, Pageable pageable) {
-        if(search != null && goodsType != null && date != null) {
+        if (search != null && goodsType != null && date != null) {
             return orderRepository.findByUserIdAndSearchAndGoodsTypeAndDate(userId, search, goodsType, date, pageable);
-        } else if(search != null && goodsType != null) {
+        } else if (search != null && goodsType != null) {
             return orderRepository.findByUserIdAndSearchAndGoodsType(userId, search, goodsType, pageable);
-        } else if(search != null && date != null) {
+        } else if (search != null && date != null) {
             return orderRepository.findByUserIdAndSearchAndDate(userId, search, date, pageable);
-        } else if(goodsType != null && date != null) {
+        } else if (goodsType != null && date != null) {
             return orderRepository.findByUserIdAndGoodsTypeAndDate(userId, goodsType, date, pageable);
-        } else if(search != null) {
+        } else if (search != null) {
             return orderRepository.findByUserIdAndSearch(userId, search, pageable);
-        } else if(goodsType != null) {
+        } else if (goodsType != null) {
             return orderRepository.findByUserIdAndGoodsType(userId, goodsType, pageable);
-        } else if(date != null) {
+        } else if (date != null) {
             return orderRepository.findByUserIdAndDate(userId, date, pageable);
         } else {
             return orderRepository.findByUserId(userId, pageable);
         }
 
+    }
+
+    public void createOrder(OrderRequestDTO parsedorderDTO) {
+
+        User user = userRepository.findById(parsedorderDTO.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        Order order = parsedorderDTO.toEntity();
+        order.setUser(user);
+
+        
     }
 }

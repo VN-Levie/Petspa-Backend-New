@@ -4,16 +4,19 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import vn.aptech.petspa.entity.Order;
 import vn.aptech.petspa.util.GoodsType;
+import vn.aptech.petspa.util.PaymentType;
 
 import java.util.List;
 
 @Data
 @NoArgsConstructor
 public class OrderRequestDTO {
+    private Long id;
+    private Long userId;
     private String address;
     private Double latitude;
     private Double longitude;
-    private String paymentMethod; // Enum nếu có thể: COD, VNPAY, ...
+    private PaymentType paymentMethod; // Enum nếu có thể: COD, VNPAY, ...
     private List<CartItemDTO> cart;
     private Double shippingFee;
     private Double total;
@@ -22,12 +25,35 @@ public class OrderRequestDTO {
     private String phone;
     private GoodsType goodsType; // spa, shop, hotel
 
-    public Order toEntity(OrderRequestDTO dto) {
+    public Order toEntity() {
         Order order = new Order();
-        order.setFreeformAddress(dto.getAddress());
-        order.setTotalPrice(dto.getTotal());
-        order.setName(dto.getName());
-        order.setPhone(dto.getPhone());
+        order.setId(this.getId());
+        if (this.getId() == null || this.getId() <= 0) {
+            this.setId(null);
+        }
+        order.setFreeformAddress(this.getAddress());
+        order.setTotalPrice(this.getTotal());
+        order.setName(this.getName());
+        order.setPhone(this.getPhone());
+        order.setGoodsType(this.getGoodsType());
         return order;
     }
+
+    // toJsonString
+    public String toJsonString() {
+        return "{" +
+                "\"address\":\"" + address + "\"," +
+                "\"latitude\":" + latitude + "," +
+                "\"longitude\":" + longitude + "," +
+                "\"paymentMethod\":\"" + paymentMethod + "\"," +
+                "\"cart\":" + CartItemDTO.toJsonArray(cart) + "," +
+                "\"shippingFee\":" + shippingFee + "," +
+                "\"total\":" + total + "," +
+                "\"subtotal\":" + subtotal + "," +
+                "\"name\":\"" + name + "\"," +
+                "\"phone\":\"" + phone + "\"," +
+                "\"goodsType\":\"" + goodsType + "\"" +
+                "}";
+    }
+
 }

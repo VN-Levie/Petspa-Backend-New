@@ -24,7 +24,7 @@ public class OrderDTO {
 
     public OrderDTO(Order order) {
         this.id = order.getId();
-        this.userId = order.getUserId();
+        this.userId = order.getUser().getId();
         this.goodsType = order.getGoodsType().name();
         this.totalPrice = order.getTotalPrice();
         this.status = order.getStatus();
