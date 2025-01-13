@@ -34,7 +34,7 @@ public class SpaProduct extends BaseEntity {
 
     // slot trống
     @Column(nullable = true)
-    private Integer slot_required = 1;
+    private Integer slotRequired = 1;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)

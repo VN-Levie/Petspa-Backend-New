@@ -18,6 +18,7 @@ public class ShopProductDTO {
     private String description;
     private Long categoryId;
     private String imageUrl;
+    private Integer quantity;
 
     public ShopProductDTO(ShopProduct shopProduct) {
         this.id = shopProduct.getId();
@@ -26,6 +27,7 @@ public class ShopProductDTO {
         this.description = shopProduct.getDescription();
         this.categoryId = shopProduct.getCategory().getId();
         this.imageUrl = shopProduct.getImageUrl();
+        this.quantity = shopProduct.getQuantity();
     }
 
 }

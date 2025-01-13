@@ -17,6 +17,7 @@ public class SpaProductDTO {
     private String imageUrl;
     private Long category;
     private String description;
+    private Integer slotRequired;
     private boolean deleted;
 
     public SpaProductDTO(String name, BigDecimal price) {
@@ -40,6 +41,7 @@ public class SpaProductDTO {
         this.imageUrl = spaProduct.getImageUrl();
         this.category = spaProduct.getCategory().getId();
         this.description = spaProduct.getDescription();
+        this.slotRequired = spaProduct.getSlotRequired();
         this.deleted = spaProduct.getDeleted();
     }
 
