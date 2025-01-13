@@ -32,15 +32,12 @@ public class SpaProduct extends BaseEntity {
     @Column(name = "status", nullable = false)
     private SpaProductStatus status = SpaProductStatus.ACTIVE;
 
-    //slot trống
-    
+    // slot trống
     @Column(nullable = true)
-    private Integer e;
+    private Integer slot_required;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private SpaCategory category;
 
-    
-    
 }
