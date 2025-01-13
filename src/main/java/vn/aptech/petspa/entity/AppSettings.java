@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AppSettings extends BaseEntity {
-    @Column(nullable = false, unique = true)
+    @Column(name = "setting_key", nullable = false, unique = true)
     private String key; // Khóa định danh: "weeklyRestDays", "specificRestDays"
 
     @Column(nullable = false, columnDefinition = "TEXT")

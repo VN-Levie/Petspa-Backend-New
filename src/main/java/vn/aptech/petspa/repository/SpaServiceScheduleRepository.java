@@ -1,8 +1,11 @@
 package vn.aptech.petspa.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import jakarta.transaction.Transactional;
 import vn.aptech.petspa.entity.SpaServiceSchedule;
 
 import java.time.LocalDate;
@@ -16,18 +19,10 @@ public interface SpaServiceScheduleRepository extends JpaRepository<SpaServiceSc
     List<SpaServiceSchedule> findByDate(LocalDate date);
 
     // Tìm lịch theo ngày và khoảng thời gian cụ thể
-    @Query("SELECT s FROM SpaServiceSchedule s WHERE s.date = :date AND s.startTime <= :startTime AND s.endTime >= :endTime")
-    SpaServiceSchedule findByDateAndTime(LocalDate date, LocalTime startTime, LocalTime endTime);
+    @Query(value = "SELECT * FROM spa_service_schedules s " +
+            "WHERE s.date = :date " +
+            "AND JSON_EXTRACT(s.schedule_details, '$.startTime') <= :startTime " +
+            "AND JSON_EXTRACT(s.schedule_details, '$.endTime') >= :endTime", nativeQuery = true)
+    SpaServiceSchedule findByDateAndTime(LocalDate date, String startTime, String endTime);
 
-    // Lấy tất cả lịch có số slot đã đặt nhỏ hơn tổng slot
-    @Query("SELECT s FROM SpaServiceSchedule s WHERE s.date = :date AND s.bookedSlot < s.maxSlot")
-    List<SpaServiceSchedule> findAvailableSchedulesByDate(LocalDate date);
-
-    // Kiểm tra xem lịch có còn khả dụng trong khoảng thời gian
-    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM SpaServiceSchedule s WHERE s.date = :date AND s.startTime <= :startTime AND s.endTime >= :endTime AND s.bookedSlot < s.maxSlot")
-    boolean isSlotAvailable(LocalDate date, LocalTime startTime, LocalTime endTime);
-
-    // Cập nhật số slot đã đặt cho lịch
-    @Query("UPDATE SpaServiceSchedule s SET s.bookedSlot = s.bookedSlot + :bookedSlot WHERE s.id = :scheduleId")
-    void updateBookedSlot(Long scheduleId, Integer bookedSlot);
 }

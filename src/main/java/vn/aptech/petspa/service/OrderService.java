@@ -216,7 +216,7 @@ public class OrderService {
         }
         // Tìm lịch spa theo ngày và khung giờ hiện tại
         SpaServiceSchedule schedule = spaServiceScheduleRepository.findByDateAndTime(
-                orderDTO.getDate(), orderDTO.getStartTime(), orderDTO.getEndTime());
+                orderDTO.getDate(), orderDTO.getStartTime().toString(), orderDTO.getEndTime().toString());
 
         if (schedule == null) {
             throw new NotFoundException("No schedule found for the selected date and time");
@@ -237,7 +237,7 @@ public class OrderService {
                     .plusMinutes(Duration.between(orderDTO.getStartTime(), orderDTO.getEndTime()).toMinutes());
 
             SpaServiceSchedule nextSchedule = spaServiceScheduleRepository.findByDateAndTime(
-                    orderDTO.getDate(), nextStartTime, nextEndTime);
+                    orderDTO.getDate(), nextStartTime.toString(), nextEndTime.toString());
 
             if (nextSchedule == null) {
                 throw new IllegalArgumentException(

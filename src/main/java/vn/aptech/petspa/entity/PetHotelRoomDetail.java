@@ -8,10 +8,14 @@ import vn.aptech.petspa.util.OrderStatusType;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
+@Entity
+@Table(name = "pet_hotel_room_details")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

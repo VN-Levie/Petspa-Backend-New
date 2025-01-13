@@ -23,10 +23,18 @@ public class PetHotelRoom extends BaseEntity {
     private String name;
     private String description;
     private Double price;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_type_id", nullable = false) // Tên cột khóa ngoại trong bảng
     private PetHotelRoomType roomType;
 
-    @OneToMany(mappedBy = "petHotelRoom", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private Set<PetHotelRoomDetail> bookingDetails;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pet_hotel_id", nullable = false)
+    private PetHotel petHotel; // Đảm bảo tên thuộc tính trùng khớp với `mappedBy`
+
 }
