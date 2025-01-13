@@ -7,6 +7,8 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -170,6 +172,33 @@ public class OrderService {
         Pet pet = petRepository.findByIdAndUser(orderDTO.getPetId(), user.getId())
                 .orElseThrow(() -> new NotFoundException("Pet not found"));
         order.setPet(pet);
+
+        // Lấy tất cả Order cảu pet này mà chưa hoàn thành | pet,
+        // Lấy danh sách sản phẩm trong giỏ hàng
+        Set<Long> cartProductIds = orderDTO.getCart().stream()
+                .map(CartItemDTO::getId)
+                .collect(Collectors.toSet());
+
+        // Tìm các đơn hàng xung đột trong khoảng thời gian 3 ngày
+        List<Order> conflictingOrders = orderRepository.findConflictingOrders(
+                pet.getId(),
+                OrderStatusType.PENDING,
+                GoodsType.SPA,
+                orderDTO.getDate().minusDays(3),
+                orderDTO.getDate().plusDays(3), cartProductIds);
+
+        // Kiểm tra từng sản phẩm trùng lặp
+        for (Order o : conflictingOrders) {
+            for (OrderProduct op : o.getOrderProducts()) {
+                if (cartProductIds.contains(op.getId())) {
+                    SpaProduct spaProduct = spaProductRepository.findById(op.getId())
+                            .orElseThrow(() -> new NotFoundException("Spa product not found"));
+                    throw new IllegalArgumentException(
+                            "You have already booked " + pet.getName() + " for "
+                                    + spaProduct.getName() + " within 3 days.");
+                }
+            }
+        }
         int totalSlotRequired = 0;
         for (CartItemDTO cI : orderDTO.getCart()) {
             SpaProduct spaProduct = spaProductRepository.findById(cI.getId())
