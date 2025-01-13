@@ -13,19 +13,19 @@ import java.math.BigDecimal;
 public class SpaProductDTO {
     private Long id;
     private String name;
-    private BigDecimal price;
+    private Double price;
     private String imageUrl;
     private Long category;
     private String description;
     private Integer slotRequired;
     private boolean deleted;
 
-    public SpaProductDTO(String name, BigDecimal price) {
+    public SpaProductDTO(String name, Double price) {
         this.name = name;
         this.price = price;
     }
 
-    public SpaProductDTO(Long id, String name, BigDecimal price, String imageUrl, Long category, String description) {
+    public SpaProductDTO(Long id, String name, Double price, String imageUrl, Long category, String description) {
         this.id = id;
         this.name = name;
         this.price = price;

@@ -20,7 +20,7 @@ public class OrderProduct extends BaseEntity {
     private Order order;
 
     @Column(nullable = false)
-    private Integer productId; // spa, shop, hotel
+    private Integer productId; // spa, shop, hotel, pet_tag
 
     @Enumerated(EnumType.STRING)
     @Column(name = "goods_type", nullable = false)

@@ -1,6 +1,7 @@
 package vn.aptech.petspa.service;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,5 +39,18 @@ public class PetHotelService {
                         .noneMatch(detail -> !(detail.getCheckOutTime().isBefore(checkIn) ||
                                 detail.getCheckInTime().isAfter(checkOut))))
                 .collect(Collectors.toList());
+    }
+
+    // check if room is available
+    public boolean isRoomAvailable(Long roomId, LocalDateTime checkIn, LocalDateTime checkOut) {
+        return petHotelRoomDetailRepository.findByPetHotelRoomId(roomId).stream()
+                .noneMatch(detail -> !(detail.getCheckOutTime().isBefore(checkIn) ||
+                        detail.getCheckInTime().isAfter(checkOut)));
+    }
+
+    public boolean isRoomAvailable(Long id, LocalDate date, LocalDate endDate) {
+        return petHotelRoomDetailRepository.findByPetHotelRoomId(id).stream()
+                .noneMatch(detail -> !(detail.getCheckOutTime().toLocalDate().isBefore(date) ||
+                        detail.getCheckInTime().toLocalDate().isAfter(endDate)));
     }
 }

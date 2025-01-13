@@ -14,7 +14,7 @@ public class ShopProductDTO {
 
     private Long id;
     private String name;
-    private BigDecimal price;
+    private Double price;
     private String description;
     private Long categoryId;
     private String imageUrl;

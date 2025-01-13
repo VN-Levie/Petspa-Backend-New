@@ -72,4 +72,9 @@ public class Order extends BaseEntity {
     // Delivery Status History
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DeliveryStatus> deliveryStatuses = new ArrayList<>();
+
+    // Payment Status History
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderProduct> orderProducts = new ArrayList<>();
+
 }

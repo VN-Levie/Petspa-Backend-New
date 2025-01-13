@@ -3,6 +3,7 @@ package vn.aptech.petspa.service;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,41 +17,11 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.NonNull;
-import vn.aptech.petspa.dto.AddressBookDTO;
-import vn.aptech.petspa.dto.CartItemDTO;
-import vn.aptech.petspa.dto.OrderDTO;
-import vn.aptech.petspa.dto.OrderRequestDTO;
-import vn.aptech.petspa.dto.SpaCategoriesDTO;
-import vn.aptech.petspa.dto.SpaProductDTO;
-import vn.aptech.petspa.entity.AddressBook;
-import vn.aptech.petspa.entity.DeliveryStatus;
-import vn.aptech.petspa.entity.Order;
-import vn.aptech.petspa.entity.PaymentStatus;
-import vn.aptech.petspa.entity.Pet;
-import vn.aptech.petspa.entity.ShopProduct;
-import vn.aptech.petspa.entity.SpaCategory;
-import vn.aptech.petspa.entity.SpaProduct;
-import vn.aptech.petspa.entity.SpaServiceSchedule;
-import vn.aptech.petspa.entity.User;
+import vn.aptech.petspa.dto.*;
+import vn.aptech.petspa.entity.*;
 import vn.aptech.petspa.exception.NotFoundException;
-import vn.aptech.petspa.repository.AddressBookRepository;
-import vn.aptech.petspa.repository.DeliveryStatusRepository;
-import vn.aptech.petspa.repository.OrderRepository;
-import vn.aptech.petspa.repository.PaymentStatusRepository;
-import vn.aptech.petspa.repository.PetHealthRepository;
-import vn.aptech.petspa.repository.PetPhotoRepository;
-import vn.aptech.petspa.repository.PetRepository;
-import vn.aptech.petspa.repository.PetTypeRepository;
-import vn.aptech.petspa.repository.ShopProductRepository;
-import vn.aptech.petspa.repository.SpaCategoryRepository;
-import vn.aptech.petspa.repository.SpaProductRepository;
-import vn.aptech.petspa.repository.SpaServiceScheduleRepository;
-import vn.aptech.petspa.repository.UserRepository;
-import vn.aptech.petspa.util.DeliveryStatusType;
-import vn.aptech.petspa.util.GoodsType;
-import vn.aptech.petspa.util.JwtUtil;
-import vn.aptech.petspa.util.OrderStatusType;
-import vn.aptech.petspa.util.PaymentStatusType;
+import vn.aptech.petspa.repository.*;
+import vn.aptech.petspa.util.*;
 
 @Service
 public class OrderService {
@@ -97,6 +68,15 @@ public class OrderService {
     private AppSettingsService appSettingsService;
 
     @Autowired
+    private PetHotelRoomRepository petHotelRoomRepository;
+
+    @Autowired
+    private PetHotelRoomDetailRepository petHotelRoomDetailRepository;
+
+    @Autowired
+    private PetHotelService petHotelService;
+
+    @Autowired
     private FileService fileService;
 
     @Transactional(readOnly = true)
@@ -129,7 +109,7 @@ public class OrderService {
 
         Order order = orderDTO.toEntity();
         order.setUser(user);
-
+        List<OrderProduct> orderProducts = new ArrayList<>();
         if (orderDTO.getGoodsType() == GoodsType.SHOP) {
             for (CartItemDTO cI : orderDTO.getCart()) {
                 ShopProduct shopProduct = shopProductRepository.findById(cI.getId())
@@ -137,18 +117,31 @@ public class OrderService {
                 if (shopProduct.getQuantity() < cI.getQuantity()) {
                     throw new IllegalArgumentException("Not enough quantity for product " + shopProduct.getName());
                 }
-
+                OrderProduct orderProduct = new OrderProduct();
+                orderProduct.setOrder(order);
+                orderProduct.setGoodsType(GoodsType.SHOP);
+                orderProduct.setId(shopProduct.getId());
+                orderProduct.setQuantity(cI.getQuantity());
+                orderProduct.setPrice(shopProduct.getPrice());
+                orderProducts.add(orderProduct);
             }
         }
 
         if (orderDTO.getGoodsType() == GoodsType.HOTEL) {
             for (CartItemDTO cI : orderDTO.getCart()) {
-                ShopProduct shopProduct = shopProductRepository.findById(cI.getId())
-                        .orElseThrow(() -> new NotFoundException("Shop product not found"));
-                if (shopProduct.getQuantity() < cI.getQuantity()) {
-                    throw new IllegalArgumentException("Not enough quantity for product " + shopProduct.getName());
+                PetHotelRoom room = petHotelRoomRepository.findById(cI.getId())
+                        .orElseThrow(() -> new NotFoundException("Hotel room not found"));
+                if (!petHotelService.isRoomAvailable(cI.getId(), orderDTO.getDate(), orderDTO.getEndDate())) {
+                    throw new IllegalArgumentException(
+                            "Room " + room.getName() + " is not available for the selected date");
                 }
-
+                OrderProduct orderProduct = new OrderProduct();
+                orderProduct.setOrder(order);
+                orderProduct.setGoodsType(GoodsType.HOTEL);
+                orderProduct.setId(room.getId());
+                orderProduct.setQuantity(cI.getQuantity());
+                orderProduct.setPrice(room.getPrice());
+                orderProducts.add(orderProduct);
             }
         }
 
@@ -175,6 +168,14 @@ public class OrderService {
                 SpaProduct spaProduct = spaProductRepository.findById(cI.getId())
                         .orElseThrow(() -> new NotFoundException("Spa product not found"));
                 totalSlotRequired += spaProduct.getSlotRequired();
+
+                OrderProduct orderProduct = new OrderProduct();
+                orderProduct.setOrder(order);
+                orderProduct.setGoodsType(GoodsType.SPA);
+                orderProduct.setId(spaProduct.getId());
+                orderProduct.setQuantity(cI.getQuantity());
+                orderProduct.setPrice(spaProduct.getPrice());
+                orderProducts.add(orderProduct);
 
             }
             // Tìm lịch spa theo ngày và khung giờ hiện tại

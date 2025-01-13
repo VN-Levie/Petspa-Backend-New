@@ -19,7 +19,7 @@ public class ShopProduct extends BaseEntity {
     private String name;
 
     @Column(nullable = false)
-    private BigDecimal price;
+    private Double price;
 
     @Column(nullable = false)
     private String imageUrl;
