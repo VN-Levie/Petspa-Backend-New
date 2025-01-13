@@ -147,7 +147,7 @@ public class OrderService {
             Pet pet = petRepository.findByIdAndUser(orderDTO.getPetId(), user.getId())
                     .orElseThrow(() -> new NotFoundException("Pet not found"));
             order.setPet(pet);
-            
+
             for (CartItemDTO cI : orderDTO.getCart()) {
                 SpaProduct spaProduct = spaProductRepository.findById(cI.getId())
                         .orElseThrow(() -> new NotFoundException("Spa product not found"));
@@ -164,10 +164,6 @@ public class OrderService {
                 if (schedule.getBookedSlot() + spaProduct.getSlotRequired() > schedule.getMaxSlot()) {
                     throw new IllegalArgumentException("Not enough slots available for the selected time");
                 }
-
-                // Cập nhật số slot đã đặt
-                schedule.setBookedSlot(schedule.getBookedSlot() + spaProduct.getSlotRequired());
-                spaServiceScheduleRepository.save(schedule);
 
                 // Cập nhật số slot đã đặt
                 schedule.setBookedSlot(schedule.getBookedSlot() + spaProduct.getSlotRequired());
