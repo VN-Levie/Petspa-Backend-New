@@ -2,6 +2,7 @@ package vn.aptech.petspa.service;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -128,112 +129,12 @@ public class OrderService {
         }
 
         if (orderDTO.getGoodsType() == GoodsType.HOTEL) {
-            for (CartItemDTO cI : orderDTO.getCart()) {
-                PetHotelRoom room = petHotelRoomRepository.findById(cI.getId())
-                        .orElseThrow(() -> new NotFoundException("Hotel room not found"));
-                if (!petHotelService.isRoomAvailable(cI.getId(), orderDTO.getDate(), orderDTO.getEndDate())) {
-                    throw new IllegalArgumentException(
-                            "Room " + room.getName() + " is not available for the selected date");
-                }
-                OrderProduct orderProduct = new OrderProduct();
-                orderProduct.setOrder(order);
-                orderProduct.setGoodsType(GoodsType.HOTEL);
-                orderProduct.setId(room.getId());
-                orderProduct.setQuantity(cI.getQuantity());
-                orderProduct.setPrice(room.getPrice());
-                orderProducts.add(orderProduct);
-            }
+            processHotelBooking(orderDTO, user, order, orderProducts);
         }
 
         // Kiểm tra số slot trong SPA
         if (orderDTO.getGoodsType() == GoodsType.SPA) {
-            if (orderDTO.getDate() == null || orderDTO.getStartTime() == null || orderDTO.getEndTime() == null) {
-                throw new IllegalArgumentException("Date, start time and end time are required for spa orders");
-            }
-            if (orderDTO.getPetId() == null || orderDTO.getPetId() <= 0) {
-                throw new IllegalArgumentException("Pet is required for spa orders");
-            }
-
-            try {
-                appSettingsService.validateWorkingConditions(orderDTO.getDate(), orderDTO.getStartTime());
-            } catch (Exception e) {
-                throw new IllegalArgumentException(e.getMessage());
-            }
-
-            Pet pet = petRepository.findByIdAndUser(orderDTO.getPetId(), user.getId())
-                    .orElseThrow(() -> new NotFoundException("Pet not found"));
-            order.setPet(pet);
-            int totalSlotRequired = 0;
-            for (CartItemDTO cI : orderDTO.getCart()) {
-                SpaProduct spaProduct = spaProductRepository.findById(cI.getId())
-                        .orElseThrow(() -> new NotFoundException("Spa product not found"));
-                totalSlotRequired += spaProduct.getSlotRequired();
-
-                OrderProduct orderProduct = new OrderProduct();
-                orderProduct.setOrder(order);
-                orderProduct.setGoodsType(GoodsType.SPA);
-                orderProduct.setId(spaProduct.getId());
-                orderProduct.setQuantity(cI.getQuantity());
-                orderProduct.setPrice(spaProduct.getPrice());
-                orderProducts.add(orderProduct);
-
-            }
-            // Tìm lịch spa theo ngày và khung giờ hiện tại
-            SpaServiceSchedule schedule = spaServiceScheduleRepository.findByDateAndTime(
-                    orderDTO.getDate(), orderDTO.getStartTime(), orderDTO.getEndTime());
-
-            if (schedule == null) {
-                throw new NotFoundException("No schedule found for the selected date and time");
-            }
-
-            // Kiểm tra số slot khả dụng trong khung giờ hiện tại
-            int availableSlots = schedule.getScheduleDetails().getMaxSlot()
-                    - schedule.getScheduleDetails().getBookedSlot();
-            order.setStartTime(orderDTO.getStartTime());
-            if (availableSlots < totalSlotRequired) {
-                // Tìm khung giờ tiếp theo (giả sử là khung giờ liền kề)
-                LocalTime nextStartTime = orderDTO.getEndTime();
-                if (nextStartTime == null) {
-                    throw new IllegalArgumentException("Next start time cannot be null");
-                }
-
-                LocalTime nextEndTime = nextStartTime
-                        .plusMinutes(Duration.between(orderDTO.getStartTime(), orderDTO.getEndTime()).toMinutes());
-
-                SpaServiceSchedule nextSchedule = spaServiceScheduleRepository.findByDateAndTime(
-                        orderDTO.getDate(), nextStartTime, nextEndTime);
-
-                if (nextSchedule == null) {
-                    throw new IllegalArgumentException(
-                            "Sorry, no available slots for the selected and adjacent time slots");
-                }
-
-                // Kiểm tra tổng số slot khả dụng trong cả hai khung giờ
-                int nextAvailableSlots = nextSchedule.getScheduleDetails().getMaxSlot()
-                        - nextSchedule.getScheduleDetails().getBookedSlot();
-                if (availableSlots + nextAvailableSlots < totalSlotRequired) {
-                    throw new IllegalArgumentException(
-                            "Sorry, we are fully booked for the selected and adjacent time slots");
-                }
-
-                // Nếu đủ slot, phân bổ vào hai khung giờ
-                schedule.getScheduleDetails().setBookedSlot(
-                        schedule.getScheduleDetails().getBookedSlot() + Math.min(totalSlotRequired, availableSlots));
-                nextSchedule.getScheduleDetails().setBookedSlot(
-                        nextSchedule.getScheduleDetails().getBookedSlot() + (totalSlotRequired - availableSlots));
-                spaServiceScheduleRepository.save(schedule);
-                spaServiceScheduleRepository.save(nextSchedule);
-                order.setEndTime(nextEndTime);
-            } else {
-                // Nếu đủ slot trong khung giờ hiện tại, cập nhật luôn
-                schedule.getScheduleDetails()
-                        .setBookedSlot(schedule.getScheduleDetails().getBookedSlot() + totalSlotRequired);
-                spaServiceScheduleRepository.save(schedule);
-                order.setEndTime(orderDTO.getEndTime());
-            }
-
-            order.setDate(orderDTO.getDate());
-
+            processSpaBooking(orderDTO, user, order, orderProducts);
         }
 
         order.setStatus(OrderStatusType.PENDING);
@@ -250,6 +151,127 @@ public class OrderService {
         deliveryStatus.setStatus(DeliveryStatusType.PENDING);
         deliveryStatusRepository.save(deliveryStatus);
         return order;
+    }
+
+    private void processSpaBooking(OrderRequestDTO orderDTO, User user, Order order, List<OrderProduct> orderProducts) {
+        if (orderDTO.getDate() == null || orderDTO.getStartTime() == null || orderDTO.getEndTime() == null) {
+            throw new IllegalArgumentException("Date, start time and end time are required for spa orders");
+        }
+        if (orderDTO.getPetId() == null || orderDTO.getPetId() <= 0) {
+            throw new IllegalArgumentException("Pet is required for spa orders");
+        }
+
+        try {
+            appSettingsService.validateWorkingConditions(orderDTO.getDate(), orderDTO.getStartTime());
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+        Pet pet = petRepository.findByIdAndUser(orderDTO.getPetId(), user.getId())
+                .orElseThrow(() -> new NotFoundException("Pet not found"));
+        order.setPet(pet);
+        int totalSlotRequired = 0;
+        for (CartItemDTO cI : orderDTO.getCart()) {
+            SpaProduct spaProduct = spaProductRepository.findById(cI.getId())
+                    .orElseThrow(() -> new NotFoundException("Spa product not found"));
+            totalSlotRequired += spaProduct.getSlotRequired();
+
+            OrderProduct orderProduct = new OrderProduct();
+            orderProduct.setOrder(order);
+            orderProduct.setGoodsType(GoodsType.SPA);
+            orderProduct.setId(spaProduct.getId());
+            orderProduct.setQuantity(cI.getQuantity());
+            orderProduct.setPrice(spaProduct.getPrice());
+            orderProducts.add(orderProduct);
+
+        }
+        // Tìm lịch spa theo ngày và khung giờ hiện tại
+        SpaServiceSchedule schedule = spaServiceScheduleRepository.findByDateAndTime(
+                orderDTO.getDate(), orderDTO.getStartTime(), orderDTO.getEndTime());
+
+        if (schedule == null) {
+            throw new NotFoundException("No schedule found for the selected date and time");
+        }
+
+        // Kiểm tra số slot khả dụng trong khung giờ hiện tại
+        int availableSlots = schedule.getScheduleDetails().getMaxSlot()
+                - schedule.getScheduleDetails().getBookedSlot();
+        order.setStartTime(orderDTO.getStartTime());
+        if (availableSlots < totalSlotRequired) {
+            // Tìm khung giờ tiếp theo (giả sử là khung giờ liền kề)
+            LocalTime nextStartTime = orderDTO.getEndTime();
+            if (nextStartTime == null) {
+                throw new IllegalArgumentException("Next start time cannot be null");
+            }
+
+            LocalTime nextEndTime = nextStartTime
+                    .plusMinutes(Duration.between(orderDTO.getStartTime(), orderDTO.getEndTime()).toMinutes());
+
+            SpaServiceSchedule nextSchedule = spaServiceScheduleRepository.findByDateAndTime(
+                    orderDTO.getDate(), nextStartTime, nextEndTime);
+
+            if (nextSchedule == null) {
+                throw new IllegalArgumentException(
+                        "Sorry, no available slots for the selected and adjacent time slots");
+            }
+
+            // Kiểm tra tổng số slot khả dụng trong cả hai khung giờ
+            int nextAvailableSlots = nextSchedule.getScheduleDetails().getMaxSlot()
+                    - nextSchedule.getScheduleDetails().getBookedSlot();
+            if (availableSlots + nextAvailableSlots < totalSlotRequired) {
+                throw new IllegalArgumentException(
+                        "Sorry, we are fully booked for the selected and adjacent time slots");
+            }
+
+            // Nếu đủ slot, phân bổ vào hai khung giờ
+            schedule.getScheduleDetails().setBookedSlot(
+                    schedule.getScheduleDetails().getBookedSlot() + Math.min(totalSlotRequired, availableSlots));
+            nextSchedule.getScheduleDetails().setBookedSlot(
+                    nextSchedule.getScheduleDetails().getBookedSlot() + (totalSlotRequired - availableSlots));
+            spaServiceScheduleRepository.save(schedule);
+            spaServiceScheduleRepository.save(nextSchedule);
+            order.setEndTime(nextEndTime);
+        } else {
+            // Nếu đủ slot trong khung giờ hiện tại, cập nhật luôn
+            schedule.getScheduleDetails()
+                    .setBookedSlot(schedule.getScheduleDetails().getBookedSlot() + totalSlotRequired);
+            spaServiceScheduleRepository.save(schedule);
+            order.setEndTime(orderDTO.getEndTime());
+        }
+
+        order.setDate(orderDTO.getDate());
+    }
+
+    private void processHotelBooking(OrderRequestDTO orderDTO, User user, Order order,
+            List<OrderProduct> orderProducts) {
+        for (CartItemDTO cI : orderDTO.getCart()) {
+            PetHotelRoom room = petHotelRoomRepository.findById(cI.getId())
+                    .orElseThrow(() -> new NotFoundException("Hotel room not found"));
+            if (!petHotelService.isRoomAvailable(cI.getId(), orderDTO.getDate(), orderDTO.getEndDate())) {
+                throw new IllegalArgumentException(
+                        "Room " + room.getName() + " is not available for the selected date");
+            }
+            Pet pet = petRepository.findByIdAndUser(orderDTO.getPetId(), user.getId())
+                    .orElseThrow(() -> new NotFoundException("Pet not found"));
+            order.setPet(pet);
+            PetHotelRoomDetail roomDetail = new PetHotelRoomDetail();
+            roomDetail.setRoom(room);
+            roomDetail.setOrder(order);
+            roomDetail.setPet(pet);
+            LocalDateTime checkInTime = LocalDateTime.of(orderDTO.getDate(), LocalTime.of(6, 0));
+            roomDetail.setCheckInTime(checkInTime);
+            LocalDateTime checkOutTime = LocalDateTime.of(orderDTO.getEndDate(), LocalTime.of(12, 0));
+            roomDetail.setCheckOutTime(checkOutTime);
+            roomDetail.setStatus(OrderStatusType.PENDING);
+
+            OrderProduct orderProduct = new OrderProduct();
+            orderProduct.setOrder(order);
+            orderProduct.setGoodsType(GoodsType.HOTEL);
+            orderProduct.setId(room.getId());
+            orderProduct.setQuantity(cI.getQuantity());
+            orderProduct.setPrice(room.getPrice());
+            orderProducts.add(orderProduct);
+        }
     }
 
 }
