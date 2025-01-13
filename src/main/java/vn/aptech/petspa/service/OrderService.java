@@ -49,6 +49,7 @@ import vn.aptech.petspa.repository.UserRepository;
 import vn.aptech.petspa.util.DeliveryStatusType;
 import vn.aptech.petspa.util.GoodsType;
 import vn.aptech.petspa.util.JwtUtil;
+import vn.aptech.petspa.util.OrderStatusType;
 import vn.aptech.petspa.util.PaymentStatusType;
 
 @Service
@@ -130,6 +131,17 @@ public class OrderService {
         order.setUser(user);
 
         if (orderDTO.getGoodsType() == GoodsType.SHOP) {
+            for (CartItemDTO cI : orderDTO.getCart()) {
+                ShopProduct shopProduct = shopProductRepository.findById(cI.getId())
+                        .orElseThrow(() -> new NotFoundException("Shop product not found"));
+                if (shopProduct.getQuantity() < cI.getQuantity()) {
+                    throw new IllegalArgumentException("Not enough quantity for product " + shopProduct.getName());
+                }
+
+            }
+        }
+
+        if (orderDTO.getGoodsType() == GoodsType.HOTEL) {
             for (CartItemDTO cI : orderDTO.getCart()) {
                 ShopProduct shopProduct = shopProductRepository.findById(cI.getId())
                         .orElseThrow(() -> new NotFoundException("Shop product not found"));
@@ -223,7 +235,7 @@ public class OrderService {
 
         }
 
-        order.setStatus("PENDING");
+        order.setStatus(OrderStatusType.PENDING);
         orderRepository.save(order);
 
         PaymentStatus paymentStatus = new PaymentStatus();

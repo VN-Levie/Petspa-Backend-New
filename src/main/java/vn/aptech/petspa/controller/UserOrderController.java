@@ -91,7 +91,7 @@ public class UserOrderController {
 
         ObjectMapper objectMapper = new ObjectMapper();
         OrderRequestDTO parsedorderDTO = objectMapper.readValue(orderJson, OrderRequestDTO.class);
-        ZDebug.gI().ZigDebug(parsedorderDTO.toJsonString());
+        ZDebug.gI().ZigDebug(parsedorderDTO.toString());
 
         Order order = orderService.createOrder(parsedorderDTO);
         return ResponseEntity.ok(new ApiResponse("Create order successfully", order));

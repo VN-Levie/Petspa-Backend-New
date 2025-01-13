@@ -23,7 +23,7 @@ public class SpaServiceSchedule extends BaseEntity {
     // Lưu trữ dữ liệu JSON cho các khung giờ
     @Column(columnDefinition = "TEXT", nullable = false)
     @Convert(converter = ScheduleDetailsConverter.class)
-    private SpaScheduleDetails scheduleDetails;
+    private SpaScheduleDetail scheduleDetails;
 
     // Phương thức tiện ích
     public boolean isFull() {

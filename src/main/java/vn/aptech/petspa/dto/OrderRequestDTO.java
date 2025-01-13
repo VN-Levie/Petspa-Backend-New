@@ -71,23 +71,4 @@ public class OrderRequestDTO {
         return order;
     }
 
-    // toJsonString
-    public String toJsonString() {
-        return "{" +
-                "\"id\":" + id + "," +
-                "\"userId\":" + userId + "," +
-                "\"address\":\"" + address + "\"," +
-                "\"latitude\":" + latitude + "," +
-                "\"longitude\":" + longitude + "," +
-                "\"paymentMethod\":\"" + paymentMethod + "\"," +
-                "\"cart\":" + CartItemDTO.toJsonArray(cart) + "," +
-                "\"shippingFee\":" + shippingFee + "," +
-                "\"total\":" + total + "," +
-                "\"subtotal\":" + subtotal + "," +
-                "\"name\":\"" + name + "\"," +
-                "\"phone\":\"" + phone + "\"," +
-                "\"goodsType\":\"" + goodsType + "\"" +
-                "}";
-    }
-
 }

@@ -5,15 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import vn.aptech.petspa.entity.SpaScheduleDetails;
+import vn.aptech.petspa.entity.SpaScheduleDetail;
 
 @Converter
-public class ScheduleDetailsConverter implements AttributeConverter<SpaScheduleDetails, String> {
+public class ScheduleDetailsConverter implements AttributeConverter<SpaScheduleDetail, String> {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public String convertToDatabaseColumn(SpaScheduleDetails scheduleDetails) {
+    public String convertToDatabaseColumn(SpaScheduleDetail scheduleDetails) {
         try {
             return objectMapper.writeValueAsString(scheduleDetails);
         } catch (JsonProcessingException e) {
@@ -22,9 +22,9 @@ public class ScheduleDetailsConverter implements AttributeConverter<SpaScheduleD
     }
 
     @Override
-    public SpaScheduleDetails convertToEntityAttribute(String json) {
+    public SpaScheduleDetail convertToEntityAttribute(String json) {
         try {
-            return objectMapper.readValue(json, SpaScheduleDetails.class);
+            return objectMapper.readValue(json, SpaScheduleDetail.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to convert JSON to ScheduleDetails", e);
         }

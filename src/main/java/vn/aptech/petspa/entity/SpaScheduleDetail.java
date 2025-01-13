@@ -9,7 +9,7 @@ import java.time.LocalTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SpaScheduleDetails {
+public class SpaScheduleDetail {
 
     private LocalTime startTime; // Giờ bắt đầu
     private LocalTime endTime; // Giờ kết thúc

@@ -7,6 +7,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import vn.aptech.petspa.util.GoodsType;
+import vn.aptech.petspa.util.OrderStatusType;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -39,8 +40,9 @@ public class Order extends BaseEntity {
     @Column(name = "total_price", nullable = false)
     private Double totalPrice;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private String status; // trạng thái đơn hàng (e.g., pending, completed, cancelled)
+    private OrderStatusType status; // trạng thái đơn hàng (e.g., pending, completed, cancelled)
 
     @Column(name = "freeform_address")
     private String freeformAddress;

@@ -27,7 +27,7 @@ public class OrderDTO {
         this.userId = order.getUser().getId();
         this.goodsType = order.getGoodsType().name();
         this.totalPrice = order.getTotalPrice();
-        this.status = order.getStatus();
+        this.status = order.getStatus().name();
         this.createdAt = order.getCreatedAt();
         this.updatedAt = order.getUpdatedAt();
     }
