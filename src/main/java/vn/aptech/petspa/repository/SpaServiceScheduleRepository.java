@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 import vn.aptech.petspa.entity.SpaServiceSchedule;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Repository
@@ -14,17 +15,17 @@ public interface SpaServiceScheduleRepository extends JpaRepository<SpaServiceSc
     // Tìm tất cả lịch theo ngày
     List<SpaServiceSchedule> findByDate(LocalDate date);
 
-    // Tìm lịch theo ngày và khung giờ cụ thể
-    @Query("SELECT s FROM SpaServiceSchedule s WHERE s.date = :date AND s.timeSlot = :timeSlot")
-    SpaServiceSchedule findByDateAndTimeSlot(LocalDate date, String timeSlot);
+    // Tìm lịch theo ngày và khoảng thời gian cụ thể
+    @Query("SELECT s FROM SpaServiceSchedule s WHERE s.date = :date AND s.startTime <= :startTime AND s.endTime >= :endTime")
+    SpaServiceSchedule findByDateAndTime(LocalDate date, LocalTime startTime, LocalTime endTime);
 
     // Lấy tất cả lịch có số slot đã đặt nhỏ hơn tổng slot
-    @Query("SELECT s FROM SpaServiceSchedule s WHERE s.date = :date AND s.bookedSlot < s.slot")
+    @Query("SELECT s FROM SpaServiceSchedule s WHERE s.date = :date AND s.bookedSlot < s.maxSlot")
     List<SpaServiceSchedule> findAvailableSchedulesByDate(LocalDate date);
 
-    // Kiểm tra xem lịch có còn khả dụng không
-    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM SpaServiceSchedule s WHERE s.date = :date AND s.timeSlot = :timeSlot AND s.bookedSlot < s.slot")
-    boolean isSlotAvailable(LocalDate date, String timeSlot);
+    // Kiểm tra xem lịch có còn khả dụng trong khoảng thời gian
+    @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM SpaServiceSchedule s WHERE s.date = :date AND s.startTime <= :startTime AND s.endTime >= :endTime AND s.bookedSlot < s.maxSlot")
+    boolean isSlotAvailable(LocalDate date, LocalTime startTime, LocalTime endTime);
 
     // Cập nhật số slot đã đặt cho lịch
     @Query("UPDATE SpaServiceSchedule s SET s.bookedSlot = s.bookedSlot + :bookedSlot WHERE s.id = :scheduleId")

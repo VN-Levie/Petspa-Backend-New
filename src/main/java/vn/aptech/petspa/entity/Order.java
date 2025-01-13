@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import vn.aptech.petspa.util.GoodsType;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -48,6 +50,15 @@ public class Order extends BaseEntity {
 
     @Column(name = "phone")
     private String phone;
+
+    @Column(name = "date", nullable = true)
+    private LocalDate date; // Ngày áp dụng lịch
+
+    @Column(name = "start_time", nullable = true)
+    private LocalTime startTime; // Giờ bắt đầu
+
+    @Column(name = "end_time", nullable = true)
+    private LocalTime endTime; // Giờ kết thúc
 
     // Payment Status History
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)

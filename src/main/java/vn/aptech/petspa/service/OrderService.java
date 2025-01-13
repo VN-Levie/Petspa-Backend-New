@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.NonNull;
 import vn.aptech.petspa.dto.AddressBookDTO;
 import vn.aptech.petspa.dto.CartItemDTO;
 import vn.aptech.petspa.dto.OrderDTO;
@@ -23,9 +24,11 @@ import vn.aptech.petspa.entity.AddressBook;
 import vn.aptech.petspa.entity.DeliveryStatus;
 import vn.aptech.petspa.entity.Order;
 import vn.aptech.petspa.entity.PaymentStatus;
+import vn.aptech.petspa.entity.Pet;
 import vn.aptech.petspa.entity.ShopProduct;
 import vn.aptech.petspa.entity.SpaCategory;
 import vn.aptech.petspa.entity.SpaProduct;
+import vn.aptech.petspa.entity.SpaServiceSchedule;
 import vn.aptech.petspa.entity.User;
 import vn.aptech.petspa.exception.NotFoundException;
 import vn.aptech.petspa.repository.AddressBookRepository;
@@ -39,6 +42,7 @@ import vn.aptech.petspa.repository.PetTypeRepository;
 import vn.aptech.petspa.repository.ShopProductRepository;
 import vn.aptech.petspa.repository.SpaCategoryRepository;
 import vn.aptech.petspa.repository.SpaProductRepository;
+import vn.aptech.petspa.repository.SpaServiceScheduleRepository;
 import vn.aptech.petspa.repository.UserRepository;
 import vn.aptech.petspa.util.DeliveryStatusType;
 import vn.aptech.petspa.util.GoodsType;
@@ -84,6 +88,9 @@ public class OrderService {
     private DeliveryStatusRepository deliveryStatusRepository;
 
     @Autowired
+    private SpaServiceScheduleRepository spaServiceScheduleRepository;
+
+    @Autowired
     private FileService fileService;
 
     @Transactional(readOnly = true)
@@ -114,29 +121,64 @@ public class OrderService {
         User user = userRepository.findById(orderDTO.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        if(orderDTO.getGoodsType() == GoodsType.SHOP){
-           for (CartItemDTO cI : orderDTO.getCart()) {
-               ShopProduct shopProduct = shopProductRepository.findById(cI.getId())
-                       .orElseThrow(() -> new NotFoundException("Shop product not found"));
-               if (shopProduct.getQuantity() < cI.getQuantity()) {
-                   throw new IllegalArgumentException("Not enough quantity for product " + shopProduct.getName());
-               }
-            
-           }
-        }
+        Order order = orderDTO.toEntity();
+        order.setUser(user);
 
-        if(orderDTO.getGoodsType() == GoodsType.SPA){
+        if (orderDTO.getGoodsType() == GoodsType.SHOP) {
             for (CartItemDTO cI : orderDTO.getCart()) {
-                SpaProduct spaProduct = spaProductRepository.findById(cI.getId())
-                        .orElseThrow(() -> new NotFoundException("Spa product not found"));
-                if (spaProduct.getQuantity() < cI.getQuantity()) {
-                    throw new IllegalArgumentException("Not enough quantity for product " + spaProduct.getName());
+                ShopProduct shopProduct = shopProductRepository.findById(cI.getId())
+                        .orElseThrow(() -> new NotFoundException("Shop product not found"));
+                if (shopProduct.getQuantity() < cI.getQuantity()) {
+                    throw new IllegalArgumentException("Not enough quantity for product " + shopProduct.getName());
                 }
+
             }
         }
 
-        Order order = orderDTO.toEntity();
-        order.setUser(user);
+        // Kiểm tra số slot trong SPA
+        if (orderDTO.getGoodsType() == GoodsType.SPA) {
+            if (orderDTO.getDate() == null || orderDTO.getStartTime() == null || orderDTO.getEndTime() == null) {
+                throw new IllegalArgumentException("Date, start time and end time are required for spa orders");
+            }
+            if (orderDTO.getPetId() == null || orderDTO.getPetId() <= 0) {
+                throw new IllegalArgumentException("Pet is required for spa orders");
+            }
+
+            Pet pet = petRepository.findByIdAndUser(orderDTO.getPetId(), user.getId())
+                    .orElseThrow(() -> new NotFoundException("Pet not found"));
+            order.setPet(pet);
+            
+            for (CartItemDTO cI : orderDTO.getCart()) {
+                SpaProduct spaProduct = spaProductRepository.findById(cI.getId())
+                        .orElseThrow(() -> new NotFoundException("Spa product not found"));
+
+                // Tìm lịch spa theo ngày và khung giờ
+                // Tìm lịch phù hợp
+                SpaServiceSchedule schedule = spaServiceScheduleRepository.findByDateAndTime(orderDTO.getDate(),
+                        orderDTO.getStartTime(), orderDTO.getEndTime());
+                if (schedule == null) {
+                    throw new NotFoundException("No schedule found for the selected date and time");
+                }
+
+                // Kiểm tra số slot khả dụng
+                if (schedule.getBookedSlot() + spaProduct.getSlotRequired() > schedule.getMaxSlot()) {
+                    throw new IllegalArgumentException("Not enough slots available for the selected time");
+                }
+
+                // Cập nhật số slot đã đặt
+                schedule.setBookedSlot(schedule.getBookedSlot() + spaProduct.getSlotRequired());
+                spaServiceScheduleRepository.save(schedule);
+
+                // Cập nhật số slot đã đặt
+                schedule.setBookedSlot(schedule.getBookedSlot() + spaProduct.getSlotRequired());
+                spaServiceScheduleRepository.save(schedule);
+
+                order.setDate(orderDTO.getDate());
+                order.setStartTime(orderDTO.getStartTime());
+                order.setEndTime(orderDTO.getEndTime());
+            }
+        }
+
         order.setStatus("PENDING");
         orderRepository.save(order);
 
