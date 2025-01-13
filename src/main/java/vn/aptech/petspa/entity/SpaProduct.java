@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.aptech.petspa.dto.SpaServiceScheduleDTO;
 import vn.aptech.petspa.util.SpaProductStatus;
 
 import java.math.BigDecimal;
@@ -39,5 +40,8 @@ public class SpaProduct extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private SpaCategory category;
+
+ 
+    
 
 }

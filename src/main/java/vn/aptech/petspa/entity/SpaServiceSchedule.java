@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.aptech.petspa.dto.SpaServiceScheduleDTO;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -38,4 +39,15 @@ public class SpaServiceSchedule extends BaseEntity {
     public boolean isFull() {
         return bookedSlot >= maxSlot;
     }
+
+    public SpaServiceScheduleDTO toDto() {
+        return new SpaServiceScheduleDTO(
+                this.getId(),
+                this.getDate(),
+                this.getStartTime(),
+                this.getEndTime(),
+                this.getMaxSlot(),
+                this.getBookedSlot());
+    }
+
 }
