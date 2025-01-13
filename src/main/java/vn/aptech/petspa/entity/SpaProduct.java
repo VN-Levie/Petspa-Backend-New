@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.aptech.petspa.util.SpaProductStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,6 +27,15 @@ public class SpaProduct extends BaseEntity {
 
     @Column(nullable = false)
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private SpaProductStatus status = SpaProductStatus.ACTIVE;
+
+    //slot trống
+    
+    @Column(nullable = true)
+    private Integer e;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)

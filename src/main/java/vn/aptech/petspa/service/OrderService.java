@@ -14,26 +14,36 @@ import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import vn.aptech.petspa.dto.AddressBookDTO;
+import vn.aptech.petspa.dto.CartItemDTO;
 import vn.aptech.petspa.dto.OrderDTO;
 import vn.aptech.petspa.dto.OrderRequestDTO;
 import vn.aptech.petspa.dto.SpaCategoriesDTO;
 import vn.aptech.petspa.dto.SpaProductDTO;
 import vn.aptech.petspa.entity.AddressBook;
+import vn.aptech.petspa.entity.DeliveryStatus;
 import vn.aptech.petspa.entity.Order;
+import vn.aptech.petspa.entity.PaymentStatus;
+import vn.aptech.petspa.entity.ShopProduct;
 import vn.aptech.petspa.entity.SpaCategory;
 import vn.aptech.petspa.entity.SpaProduct;
 import vn.aptech.petspa.entity.User;
 import vn.aptech.petspa.exception.NotFoundException;
 import vn.aptech.petspa.repository.AddressBookRepository;
+import vn.aptech.petspa.repository.DeliveryStatusRepository;
 import vn.aptech.petspa.repository.OrderRepository;
+import vn.aptech.petspa.repository.PaymentStatusRepository;
 import vn.aptech.petspa.repository.PetHealthRepository;
 import vn.aptech.petspa.repository.PetPhotoRepository;
 import vn.aptech.petspa.repository.PetRepository;
 import vn.aptech.petspa.repository.PetTypeRepository;
+import vn.aptech.petspa.repository.ShopProductRepository;
 import vn.aptech.petspa.repository.SpaCategoryRepository;
 import vn.aptech.petspa.repository.SpaProductRepository;
 import vn.aptech.petspa.repository.UserRepository;
+import vn.aptech.petspa.util.DeliveryStatusType;
+import vn.aptech.petspa.util.GoodsType;
 import vn.aptech.petspa.util.JwtUtil;
+import vn.aptech.petspa.util.PaymentStatusType;
 
 @Service
 public class OrderService {
@@ -62,7 +72,16 @@ public class OrderService {
     private SpaProductRepository spaProductRepository;
 
     @Autowired
+    private ShopProductRepository shopProductRepository;
+
+    @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private PaymentStatusRepository paymentStatusRepository;
+
+    @Autowired
+    private DeliveryStatusRepository deliveryStatusRepository;
 
     @Autowired
     private FileService fileService;
@@ -89,14 +108,48 @@ public class OrderService {
 
     }
 
-    public void createOrder(OrderRequestDTO parsedorderDTO) {
+    @Transactional
+    public Order createOrder(OrderRequestDTO orderDTO) {
 
-        User user = userRepository.findById(parsedorderDTO.getUserId())
+        User user = userRepository.findById(orderDTO.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        Order order = parsedorderDTO.toEntity();
-        order.setUser(user);
+        if(orderDTO.getGoodsType() == GoodsType.SHOP){
+           for (CartItemDTO cI : orderDTO.getCart()) {
+               ShopProduct shopProduct = shopProductRepository.findById(cI.getId())
+                       .orElseThrow(() -> new NotFoundException("Shop product not found"));
+               if (shopProduct.getQuantity() < cI.getQuantity()) {
+                   throw new IllegalArgumentException("Not enough quantity for product " + shopProduct.getName());
+               }
+            
+           }
+        }
 
-        
+        if(orderDTO.getGoodsType() == GoodsType.SPA){
+            for (CartItemDTO cI : orderDTO.getCart()) {
+                SpaProduct spaProduct = spaProductRepository.findById(cI.getId())
+                        .orElseThrow(() -> new NotFoundException("Spa product not found"));
+                if (spaProduct.getQuantity() < cI.getQuantity()) {
+                    throw new IllegalArgumentException("Not enough quantity for product " + spaProduct.getName());
+                }
+            }
+        }
+
+        Order order = orderDTO.toEntity();
+        order.setUser(user);
+        order.setStatus("PENDING");
+        orderRepository.save(order);
+
+        PaymentStatus paymentStatus = new PaymentStatus();
+        paymentStatus.setOrder(order);
+        paymentStatus.setStatus(PaymentStatusType.PENDING);
+        paymentStatus.setPaymentType(orderDTO.getPaymentMethod());
+        paymentStatusRepository.save(paymentStatus);
+
+        DeliveryStatus deliveryStatus = new DeliveryStatus();
+        deliveryStatus.setOrder(order);
+        deliveryStatus.setStatus(DeliveryStatusType.PENDING);
+        deliveryStatusRepository.save(deliveryStatus);
+        return order;
     }
 }

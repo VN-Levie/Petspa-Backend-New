@@ -122,6 +122,7 @@ public class AuthController {
             String jwtToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.ACCESS_TOKEN);
             String refreshToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.REFRESH_TOKEN);
             UserDTO userDTO = new UserDTO();
+            userDTO.setId(user.getId());
             userDTO.setEmail(user.getEmail());
             userDTO.setName(user.getName());
             // userDTO.setRole(user.getRole().getName());
@@ -167,6 +168,7 @@ public class AuthController {
                 String jwtToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.ACCESS_TOKEN);
                 String refreshToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.REFRESH_TOKEN);
                 UserDTO userDTO = new UserDTO();
+                userDTO.setId(user.getId());
                 userDTO.setEmail(user.getEmail());
                 userDTO.setName(user.getName());
                 // userDTO.setRole(user.getRole().getName());
@@ -209,6 +211,7 @@ public class AuthController {
                 }
                 String jwtToken = jwtUtil.generateToken(userDetails, user.getId(), JwtUtil.ACCESS_TOKEN);
                 UserDTO userDTO = new UserDTO();
+                userDTO.setId(user.getId());
                 userDTO.setEmail(user.getEmail());
                 userDTO.setName(user.getName());
                 // userDTO.setRole(user.getRole().getName());

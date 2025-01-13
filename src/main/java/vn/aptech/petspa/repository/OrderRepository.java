@@ -20,7 +20,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         SELECT new vn.aptech.petspa.dto.OrderDTO(o)
         FROM Order o
         WHERE o.deleted = false
-          AND (:userId IS NULL OR o.userId = :userId)
+          AND (:userId IS NULL OR o.user.id = :userId)
           AND (:search IS NULL OR o.goodsType LIKE %:search% OR o.status LIKE %:search%)
           AND (:goodsType IS NULL OR o.goodsType = :goodsType)
           AND (:date IS NULL OR FUNCTION('DATE', o.createdAt) = :date)
@@ -36,7 +36,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 SELECT new vn.aptech.petspa.dto.OrderDTO(o)
                 FROM Order o
                 WHERE o.deleted = false
-                  AND o.userId = :userId
+                  AND o.user.id = :userId
                   AND (:search IS NULL OR o.goodsType LIKE %:search% OR o.status LIKE %:search%)
                   AND (:goodsType IS NULL OR o.goodsType = :goodsType)
             """)
@@ -50,7 +50,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 SELECT new vn.aptech.petspa.dto.OrderDTO(o)
                 FROM Order o
                 WHERE o.deleted = false
-                  AND o.userId = :userId
+                  AND o.user.id = :userId
                   AND (:search IS NULL OR o.goodsType LIKE %:search% OR o.status LIKE %:search%)
                   AND (:date IS NULL OR FUNCTION('DATE', o.createdAt) = :date)
             """)
@@ -64,7 +64,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 SELECT new vn.aptech.petspa.dto.OrderDTO(o)
                 FROM Order o
                 WHERE o.deleted = false
-                  AND o.userId = :userId
+                  AND o.user.id = :userId
                   AND (:goodsType IS NULL OR o.goodsType = :goodsType)
                   AND (:date IS NULL OR FUNCTION('DATE', o.createdAt) = :date)
             """)
@@ -78,7 +78,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 SELECT new vn.aptech.petspa.dto.OrderDTO(o)
                 FROM Order o
                 WHERE o.deleted = false
-                  AND o.userId = :userId
+                  AND o.user.id = :userId
                   AND (:search IS NULL OR o.goodsType LIKE %:search% OR o.status LIKE %:search%)
             """)
             Page<OrderDTO> findByUserIdAndSearch(
@@ -90,7 +90,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 SELECT new vn.aptech.petspa.dto.OrderDTO(o)
                 FROM Order o
                 WHERE o.deleted = false
-                  AND o.userId = :userId
+                  AND o.user.id = :userId
                   AND (:goodsType IS NULL OR o.goodsType = :goodsType)
             """)
             Page<OrderDTO> findByUserIdAndGoodsType(
@@ -102,7 +102,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 SELECT new vn.aptech.petspa.dto.OrderDTO(o)
                 FROM Order o
                 WHERE o.deleted = false
-                  AND o.userId = :userId
+                  AND o.user.id = :userId
                   AND (:date IS NULL OR FUNCTION('DATE', o.createdAt) = :date)
             """)
             Page<OrderDTO> findByUserIdAndDate(
@@ -114,7 +114,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 SELECT new vn.aptech.petspa.dto.OrderDTO(o)
                 FROM Order o
                 WHERE o.deleted = false
-                  AND o.userId = :userId
+                  AND o.user.id = :userId
             """)
             Page<OrderDTO> findByUserId(
                     @Param("userId") Long userId,

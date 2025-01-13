@@ -36,12 +36,15 @@ public class OrderRequestDTO {
         order.setName(this.getName());
         order.setPhone(this.getPhone());
         order.setGoodsType(this.getGoodsType());
+       
         return order;
     }
 
     // toJsonString
     public String toJsonString() {
         return "{" +
+                "\"id\":" + id + "," +
+                "\"userId\":" + userId + "," +
                 "\"address\":\"" + address + "\"," +
                 "\"latitude\":" + latitude + "," +
                 "\"longitude\":" + longitude + "," +

@@ -26,6 +26,7 @@ import io.jsonwebtoken.JwtException;
 import vn.aptech.petspa.dto.OrderDTO;
 import vn.aptech.petspa.dto.OrderRequestDTO;
 import vn.aptech.petspa.dto.PetDTO;
+import vn.aptech.petspa.entity.Order;
 import vn.aptech.petspa.entity.Pet;
 import vn.aptech.petspa.entity.User;
 import vn.aptech.petspa.repository.PetRepository;
@@ -92,7 +93,7 @@ public class UserOrderController {
         OrderRequestDTO parsedorderDTO = objectMapper.readValue(orderJson, OrderRequestDTO.class);
         ZDebug.gI().ZigDebug(parsedorderDTO.toJsonString());
 
-        orderService.createOrder(parsedorderDTO);
-        return ResponseEntity.ok(new ApiResponse("Create order successfully", parsedorderDTO));
+        Order order = orderService.createOrder(parsedorderDTO);
+        return ResponseEntity.ok(new ApiResponse("Create order successfully", order));
     }
 }
