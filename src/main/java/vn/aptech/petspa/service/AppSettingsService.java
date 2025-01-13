@@ -124,4 +124,20 @@ public class AppSettingsService {
         return false; // Không tìm thấy cấu hình cho ngày hiện tại
     }
 
+    public void validateWorkingConditions(LocalDate date, LocalTime startTime) {
+        try {
+            if (isRestDay(date)) {
+                throw new IllegalArgumentException(
+                        "Sorry, we are closed on this day. For more information, please contact us.");
+            }
+
+            if (!isWorkingHour(date, startTime)) {
+                throw new IllegalArgumentException(
+                        "Sorry, we cannot accept orders at this selected time. For more information, please contact us.");
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error validating working conditions", e);
+        }
+    }
+
 }
