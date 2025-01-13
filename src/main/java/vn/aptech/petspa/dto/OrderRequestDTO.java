@@ -48,6 +48,9 @@ public class OrderRequestDTO {
     private LocalDate date; // Ngày áp dụng lịch
 
     @Nullable
+    private LocalDate endDate; // Ngày check-out hotel
+
+    @Nullable
     private LocalTime startTime; // Giờ bắt đầu
 
     @Nullable

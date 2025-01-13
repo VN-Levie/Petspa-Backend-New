@@ -1,6 +1,8 @@
 package vn.aptech.petspa.service;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -91,6 +93,9 @@ public class OrderService {
     private SpaServiceScheduleRepository spaServiceScheduleRepository;
 
     @Autowired
+    private AppSettingsService appSettingsService;
+
+    @Autowired
     private FileService fileService;
 
     @Transactional(readOnly = true)
@@ -144,35 +149,91 @@ public class OrderService {
                 throw new IllegalArgumentException("Pet is required for spa orders");
             }
 
+            try {
+                if (appSettingsService.isRestDay(orderDTO.getDate())) {
+                    throw new IllegalArgumentException(
+                            "Sorry, we are closed on this day.\nFor more information, please contact us.");
+
+                }
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Failed to check rest day: " + e.getMessage());
+            }
+            try {
+                if (appSettingsService.isWorkingHour(orderDTO.getDate(), orderDTO.getStartTime())) {
+                    throw new IllegalArgumentException(
+                            "Sorry, we cannot accept orders at this selected time.\nFor more information, please contact us.");
+
+                }
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Failed to check rest day: " + e.getMessage());
+            }
+
             Pet pet = petRepository.findByIdAndUser(orderDTO.getPetId(), user.getId())
                     .orElseThrow(() -> new NotFoundException("Pet not found"));
             order.setPet(pet);
-
+            int totalSlotRequired = 0;
             for (CartItemDTO cI : orderDTO.getCart()) {
                 SpaProduct spaProduct = spaProductRepository.findById(cI.getId())
                         .orElseThrow(() -> new NotFoundException("Spa product not found"));
+                totalSlotRequired += spaProduct.getSlotRequired();
 
-                // Tìm lịch spa theo ngày và khung giờ
-                // Tìm lịch phù hợp
-                SpaServiceSchedule schedule = spaServiceScheduleRepository.findByDateAndTime(orderDTO.getDate(),
-                        orderDTO.getStartTime(), orderDTO.getEndTime());
-                if (schedule == null) {
-                    throw new NotFoundException("No schedule found for the selected date and time");
+            }
+            // Tìm lịch spa theo ngày và khung giờ hiện tại
+            SpaServiceSchedule schedule = spaServiceScheduleRepository.findByDateAndTime(
+                    orderDTO.getDate(), orderDTO.getStartTime(), orderDTO.getEndTime());
+
+            if (schedule == null) {
+                throw new NotFoundException("No schedule found for the selected date and time");
+            }
+
+            // Kiểm tra số slot khả dụng trong khung giờ hiện tại
+            int availableSlots = schedule.getScheduleDetails().getMaxSlot()
+                    - schedule.getScheduleDetails().getBookedSlot();
+            order.setStartTime(orderDTO.getStartTime());
+            if (availableSlots < totalSlotRequired) {
+                // Tìm khung giờ tiếp theo (giả sử là khung giờ liền kề)
+                LocalTime nextStartTime = orderDTO.getEndTime();
+                if (nextStartTime == null) {
+                    throw new IllegalArgumentException("Next start time cannot be null");
                 }
 
-                // Kiểm tra số slot khả dụng
-                if (schedule.getBookedSlot() + spaProduct.getSlotRequired() > schedule.getMaxSlot()) {
-                    throw new IllegalArgumentException("Not enough slots available for the selected time");
+                LocalTime nextEndTime = nextStartTime
+                        .plusMinutes(Duration.between(orderDTO.getStartTime(), orderDTO.getEndTime()).toMinutes());
+
+                SpaServiceSchedule nextSchedule = spaServiceScheduleRepository.findByDateAndTime(
+                        orderDTO.getDate(), nextStartTime, nextEndTime);
+
+                if (nextSchedule == null) {
+                    throw new IllegalArgumentException(
+                            "Sorry, no available slots for the selected and adjacent time slots");
                 }
 
-                // Cập nhật số slot đã đặt
-                schedule.setBookedSlot(schedule.getBookedSlot() + spaProduct.getSlotRequired());
+                // Kiểm tra tổng số slot khả dụng trong cả hai khung giờ
+                int nextAvailableSlots = nextSchedule.getScheduleDetails().getMaxSlot()
+                        - nextSchedule.getScheduleDetails().getBookedSlot();
+                if (availableSlots + nextAvailableSlots < totalSlotRequired) {
+                    throw new IllegalArgumentException(
+                            "Sorry, we are fully booked for the selected and adjacent time slots");
+                }
+
+                // Nếu đủ slot, phân bổ vào hai khung giờ
+                schedule.getScheduleDetails().setBookedSlot(
+                        schedule.getScheduleDetails().getBookedSlot() + Math.min(totalSlotRequired, availableSlots));
+                nextSchedule.getScheduleDetails().setBookedSlot(
+                        nextSchedule.getScheduleDetails().getBookedSlot() + (totalSlotRequired - availableSlots));
                 spaServiceScheduleRepository.save(schedule);
-
-                order.setDate(orderDTO.getDate());
-                order.setStartTime(orderDTO.getStartTime());
+                spaServiceScheduleRepository.save(nextSchedule);
+                order.setEndTime(nextEndTime);
+            } else {
+                // Nếu đủ slot trong khung giờ hiện tại, cập nhật luôn
+                schedule.getScheduleDetails()
+                        .setBookedSlot(schedule.getScheduleDetails().getBookedSlot() + totalSlotRequired);
+                spaServiceScheduleRepository.save(schedule);
                 order.setEndTime(orderDTO.getEndTime());
             }
+
+            order.setDate(orderDTO.getDate());
+
         }
 
         order.setStatus("PENDING");

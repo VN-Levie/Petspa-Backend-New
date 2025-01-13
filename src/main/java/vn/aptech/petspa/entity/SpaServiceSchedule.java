@@ -5,9 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import vn.aptech.petspa.dto.SpaServiceScheduleDTO;
+import vn.aptech.petspa.util.ScheduleDetailsConverter;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 
 @Entity
 @Table(name = "spa_service_schedules")
@@ -20,34 +20,23 @@ public class SpaServiceSchedule extends BaseEntity {
     @Column(nullable = false)
     private LocalDate date;
 
-    // Giờ bắt đầu và kết thúc
-    @Column(nullable = false)
-    private LocalTime startTime;
+    // Lưu trữ dữ liệu JSON cho các khung giờ
+    @Column(columnDefinition = "TEXT", nullable = false)
+    @Convert(converter = ScheduleDetailsConverter.class)
+    private SpaScheduleDetails scheduleDetails;
 
-    @Column(nullable = false)
-    private LocalTime endTime;
-
-    // Số slot tối đa cho khung giờ
-    @Column(nullable = false)
-    private Integer maxSlot;
-
-    // Số slot đã được đặt
-    @Column(nullable = false)
-    private Integer bookedSlot;
-
-    // Phương thức tiện ích (nếu cần)
+    // Phương thức tiện ích
     public boolean isFull() {
-        return bookedSlot >= maxSlot;
+        return scheduleDetails != null && scheduleDetails.getBookedSlot() >= scheduleDetails.getMaxSlot();
     }
 
     public SpaServiceScheduleDTO toDto() {
         return new SpaServiceScheduleDTO(
                 this.getId(),
                 this.getDate(),
-                this.getStartTime(),
-                this.getEndTime(),
-                this.getMaxSlot(),
-                this.getBookedSlot());
+                scheduleDetails.getStartTime(),
+                scheduleDetails.getEndTime(),
+                scheduleDetails.getMaxSlot(),
+                scheduleDetails.getBookedSlot());
     }
-
 }

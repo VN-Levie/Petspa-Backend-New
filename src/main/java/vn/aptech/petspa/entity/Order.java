@@ -54,6 +54,9 @@ public class Order extends BaseEntity {
     @Column(name = "date", nullable = true)
     private LocalDate date; // Ngày áp dụng lịch
 
+    @Column(name = "end_date", nullable = true)
+    private LocalDate endDate; // Ngày check-out hotel
+
     @Column(name = "start_time", nullable = true)
     private LocalTime startTime; // Giờ bắt đầu
 
