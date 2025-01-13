@@ -174,19 +174,50 @@ public class OrderService {
             }
 
             // Kiểm tra số slot khả dụng trong khung giờ hiện tại
+            int availableSlots = schedule.getScheduleDetails().getMaxSlot()
+                    - schedule.getScheduleDetails().getBookedSlot();
             order.setStartTime(orderDTO.getStartTime());
-            LocalTime nextStartTime = orderDTO.getEndTime();
-            if (nextStartTime == null) {
-                throw new IllegalArgumentException("End time is required for spa orders");
+            if (availableSlots < totalSlotRequired) {
+                // Tìm khung giờ tiếp theo (giả sử là khung giờ liền kề)
+                LocalTime nextStartTime = orderDTO.getEndTime();
+                if (nextStartTime == null) {
+                    throw new IllegalArgumentException("Next start time cannot be null");
+                }
+
+                LocalTime nextEndTime = nextStartTime
+                        .plusMinutes(Duration.between(orderDTO.getStartTime(), orderDTO.getEndTime()).toMinutes());
+
+                SpaServiceSchedule nextSchedule = spaServiceScheduleRepository.findByDateAndTime(
+                        orderDTO.getDate(), nextStartTime, nextEndTime);
+
+                if (nextSchedule == null) {
+                    throw new IllegalArgumentException(
+                            "Sorry, no available slots for the selected and adjacent time slots");
+                }
+
+                // Kiểm tra tổng số slot khả dụng trong cả hai khung giờ
+                int nextAvailableSlots = nextSchedule.getScheduleDetails().getMaxSlot()
+                        - nextSchedule.getScheduleDetails().getBookedSlot();
+                if (availableSlots + nextAvailableSlots < totalSlotRequired) {
+                    throw new IllegalArgumentException(
+                            "Sorry, we are fully booked for the selected and adjacent time slots");
+                }
+
+                // Nếu đủ slot, phân bổ vào hai khung giờ
+                schedule.getScheduleDetails().setBookedSlot(
+                        schedule.getScheduleDetails().getBookedSlot() + Math.min(totalSlotRequired, availableSlots));
+                nextSchedule.getScheduleDetails().setBookedSlot(
+                        nextSchedule.getScheduleDetails().getBookedSlot() + (totalSlotRequired - availableSlots));
+                spaServiceScheduleRepository.save(schedule);
+                spaServiceScheduleRepository.save(nextSchedule);
+                order.setEndTime(nextEndTime);
+            } else {
+                // Nếu đủ slot trong khung giờ hiện tại, cập nhật luôn
+                schedule.getScheduleDetails()
+                        .setBookedSlot(schedule.getScheduleDetails().getBookedSlot() + totalSlotRequired);
+                spaServiceScheduleRepository.save(schedule);
+                order.setEndTime(orderDTO.getEndTime());
             }
-            LocalTime nextEndTime = nextStartTime
-                    .plusMinutes(Duration.between(orderDTO.getStartTime(), orderDTO.getEndTime()).toMinutes());
-
-            SpaServiceSchedule nextSchedule = spaServiceScheduleRepository.findByDateAndTime(
-                    orderDTO.getDate(), nextStartTime, nextEndTime);
-
-            allocateSlots(schedule, nextSchedule, totalSlotRequired);
-            order.setEndTime(orderDTO.getEndTime());
 
             order.setDate(orderDTO.getDate());
 
@@ -208,33 +239,4 @@ public class OrderService {
         return order;
     }
 
-    private void allocateSlots(SpaServiceSchedule schedule, SpaServiceSchedule nextSchedule, int totalSlotRequired) {
-        int availableSlots = schedule.getScheduleDetails().getMaxSlot()
-                - schedule.getScheduleDetails().getBookedSlot();
-
-        if (availableSlots >= totalSlotRequired) {
-            schedule.getScheduleDetails()
-                    .setBookedSlot(schedule.getScheduleDetails().getBookedSlot() + totalSlotRequired);
-            spaServiceScheduleRepository.save(schedule);
-        } else if (nextSchedule != null) {
-            int nextAvailableSlots = nextSchedule.getScheduleDetails().getMaxSlot()
-                    - nextSchedule.getScheduleDetails().getBookedSlot();
-
-            if (availableSlots + nextAvailableSlots < totalSlotRequired) {
-                throw new IllegalArgumentException(
-                        "Sorry, we are fully booked for the selected and adjacent time slots");
-            }
-
-            schedule.getScheduleDetails()
-                    .setBookedSlot(schedule.getScheduleDetails().getBookedSlot()
-                            + Math.min(totalSlotRequired, availableSlots));
-            nextSchedule.getScheduleDetails()
-                    .setBookedSlot(
-                            nextSchedule.getScheduleDetails().getBookedSlot() + (totalSlotRequired - availableSlots));
-            spaServiceScheduleRepository.save(schedule);
-            spaServiceScheduleRepository.save(nextSchedule);
-        } else {
-            throw new IllegalArgumentException("Not enough slots available for the selected time");
-        }
-    }
 }
