@@ -142,6 +142,7 @@ public class PaymentController {
             }
             long amount = (long) (order.getTotalPrice() * 100);           
             String callBack = "http://localhost:" + 3000 + "/payment/vnpay_ipn";
+            return ResponseEntity.ok(new ApiResponse(callBack));
         } catch (Exception e) {
             return ResponseEntity.ok(new ApiResponse("error"));
         }
