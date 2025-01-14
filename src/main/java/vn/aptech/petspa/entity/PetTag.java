@@ -20,10 +20,12 @@ public class PetTag extends BaseEntity {
     @Column(nullable = false)
     private String description;
 
-    // Ảnh minh họa cho loại thú cưng
     @Column(name = "image_url", nullable = true)
     private String imageUrl;
 
     @Column(nullable = false)
-    private BigDecimal price;
+    private Double price;
+
+    @Column(nullable = false)
+    private Integer quantity = 1;
 }

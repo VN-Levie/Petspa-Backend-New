@@ -80,6 +80,9 @@ public class OrderService {
     private PetHotelService petHotelService;
 
     @Autowired
+    private PetTagRepository petTagRepository;
+
+    @Autowired
     private FileService fileService;
 
     @Transactional(readOnly = true)
@@ -129,7 +132,22 @@ public class OrderService {
                 orderProducts.add(orderProduct);
             }
         }
-
+        if (orderDTO.getGoodsType() == GoodsType.PET_TAG) {
+            for (CartItemDTO cI : orderDTO.getCart()) {
+                PetTag petTag = petTagRepository.findById(cI.getId())
+                        .orElseThrow(() -> new NotFoundException("Shop product not found"));
+                if (petTag.getQuantity() < cI.getQuantity()) {
+                    throw new IllegalArgumentException("Not enough quantity for product " + petTag.getName());
+                }
+                OrderProduct orderProduct = new OrderProduct();
+                orderProduct.setOrder(order);
+                orderProduct.setGoodsType(GoodsType.SHOP);
+                orderProduct.setId(petTag.getId());
+                orderProduct.setQuantity(cI.getQuantity());
+                orderProduct.setPrice(petTag.getPrice());
+                orderProducts.add(orderProduct);
+            }
+        }
         if (orderDTO.getGoodsType() == GoodsType.HOTEL) {
             processHotelBooking(orderDTO, user, order, orderProducts);
         }
@@ -301,6 +319,16 @@ public class OrderService {
             orderProduct.setPrice(room.getPrice());
             orderProducts.add(orderProduct);
         }
+    }
+
+    public Order getOrderById(long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+    }
+
+    @Transactional
+    public void saveOrder(Order order) {
+        orderRepository.save(order);
     }
 
 }

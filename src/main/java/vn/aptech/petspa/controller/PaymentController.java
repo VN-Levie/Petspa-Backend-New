@@ -1,5 +1,6 @@
 package vn.aptech.petspa.controller;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -54,11 +55,15 @@ import vn.aptech.petspa.dto.PaymentDTO;
 import vn.aptech.petspa.dto.RegisterDTO;
 import vn.aptech.petspa.dto.UserDTO;
 import vn.aptech.petspa.dto.VerifyDTO;
+import vn.aptech.petspa.entity.Order;
 import vn.aptech.petspa.entity.User;
 import vn.aptech.petspa.repository.UserRepository;
 import vn.aptech.petspa.service.EmailService;
+import vn.aptech.petspa.service.OrderService;
+import vn.aptech.petspa.service.PaymentService;
 import vn.aptech.petspa.util.ApiResponse;
 import vn.aptech.petspa.util.JwtUtil;
+import vn.aptech.petspa.util.OrderStatusType;
 import vn.aptech.petspa.util.ZDebug;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -83,6 +88,12 @@ public class PaymentController {
     @Autowired
     private Environment environment;
     private String port;
+
+    @Autowired
+    PaymentService paymentService;
+
+    @Autowired
+    OrderService orderService;
 
     @PostConstruct
     public void init() {
@@ -123,9 +134,22 @@ public class PaymentController {
     }
 
     @PostMapping("/create-payment")
-    public ResponseEntity<ApiResponse> addUserPet(
+    public ResponseEntity<ApiResponse> createPay(@RequestParam int orderId , @RequestParam String ip) {
+        try {
+            Order order = orderService.getOrderById(orderId);
+            if (order == null) {
+                return ResponseEntity.ok(new ApiResponse("error"));
+            }
+            long amount = (long) (order.getTotalPrice() * 100);           
+            String callBack = "http://localhost:" + 3000 + "/payment/vnpay_ipn";
+        } catch (Exception e) {
+            return ResponseEntity.ok(new ApiResponse("error"));
+        }
+    }
 
-            @RequestParam("paymentDTO") String paymentRequestJson) throws JsonProcessingException {
+    @PostMapping("/create-payment-old")
+    public ResponseEntity<ApiResponse> addUserPet(@RequestParam("paymentDTO") String paymentRequestJson)
+            throws JsonProcessingException {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             PaymentDTO paymentDTO = objectMapper.readValue(paymentRequestJson, PaymentDTO.class);
@@ -154,7 +178,7 @@ public class PaymentController {
             } else {
                 vnp_Params.put("vnp_Locale", "vn");
             }
-            vnp_Params.put("vnp_ReturnUrl", "http://localhost:" + port + "/api/payment/vnpay_ipn");
+            vnp_Params.put("vnp_ReturnUrl", "http://localhost:" + 3000 + "/payment/vnpay_ipn");
             vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
             Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
             SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
@@ -252,36 +276,78 @@ public class PaymentController {
             // "vnp_SecureHash":
             // "f68f584feb09bf55d0c818e5672d131a939e823223af73c9647655f346d706d43b8275dcc31dfec7b7b990f49e533a26bf1b6826abd85709683b3043b6995ee7"
             // }
-            Map<String, String> fields = new HashMap<>();
-            for (Enumeration<String> params = Collections.enumeration(allParams.keySet()); params.hasMoreElements();) {
-                String fieldName = URLEncoder.encode((String) params.nextElement(),
-                        StandardCharsets.US_ASCII.toString());
-                String fieldValue = URLEncoder.encode(allParams.get(fieldName), StandardCharsets.US_ASCII.toString());
-                if ((fieldValue != null) && (fieldValue.length() > 0)) {
-                    fields.put(fieldName, fieldValue);
-                }
+            if (!verifyTransactionHash(allParams)) {
+                return ResponseEntity.ok(new ApiResponse("error"));
             }
 
-            String vnp_SecureHash = allParams.get("vnp_SecureHash");
-            if (fields.containsKey("vnp_SecureHashType")) {
-                fields.remove("vnp_SecureHashType");
+            // Lấy mã đơn hàng
+            String vnp_TxnRef = allParams.get("vnp_TxnRef");
+            // phân tích mã đơn hàng
+            String[] orderInfo = vnp_TxnRef.split("_");
+            String orderType = orderInfo[0];
+            long orderId = Long.parseLong(orderInfo[1]);
+            Order order = orderService.getOrderById(orderId);
+            if (order == null) {
+                return ResponseEntity.ok(new ApiResponse("error"));
             }
-            if (fields.containsKey("vnp_SecureHash")) {
-                fields.remove("vnp_SecureHash");
+
+            if (!orderType.equalsIgnoreCase(order.getGoodsType().name())) {
+                return ResponseEntity.ok(new ApiResponse("error"));
             }
-            ;
-            String signValue = hashAllFields(fields);
-            if (signValue.equals(vnp_SecureHash)) {
-                ZDebug.gI().ZigDebug("Valid hash");
+
+            if (order.getStatus() != OrderStatusType.PENDING) {
+                return ResponseEntity.ok(new ApiResponse("error"));
+            }
+
+            // lấy mã phản hồi vnp_ResponseCode
+            String vnp_ResponseCode = allParams.get("vnp_ResponseCode");
+
+            // lấy mã phản hồi vnp_TransactionStatus
+            String vnpPaymentStatus = allParams.get("vnp_TransactionStatus");
+
+            // cập nhật trạng thái đơn hàng
+            if (vnp_ResponseCode.equals("00") && vnpPaymentStatus.equals("00")) {
+                order.setStatus(OrderStatusType.CONFIRMED);
             } else {
-                ZDebug.gI().ZigDebug("Invalid hash: " + signValue + " - " + vnp_SecureHash);
+                order.setStatus(OrderStatusType.CANCELLED);
             }
+
+            orderService.saveOrder(order);
+
             // checkOrderStatus: 00: Thanh toán thành công, 01: Thanh toán thất bại, 02: Đã
             // hủy, 03: Đang chờ xử lý
             return ResponseEntity.ok(new ApiResponse(allParams));
         } catch (Exception e) {
             return ResponseEntity.ok(new ApiResponse("error"));
         }
+    }
+
+    private boolean verifyTransactionHash(Map<String, String> allParams) throws UnsupportedEncodingException {
+        Map<String, String> fields = new HashMap<>();
+        for (Enumeration<String> params = Collections.enumeration(allParams.keySet()); params.hasMoreElements();) {
+            String fieldName = URLEncoder.encode((String) params.nextElement(),
+                    StandardCharsets.US_ASCII.toString());
+            String fieldValue = URLEncoder.encode(allParams.get(fieldName), StandardCharsets.US_ASCII.toString());
+            if ((fieldValue != null) && (fieldValue.length() > 0)) {
+                fields.put(fieldName, fieldValue);
+            }
+        }
+
+        String vnp_SecureHash = allParams.get("vnp_SecureHash");
+        if (fields.containsKey("vnp_SecureHashType")) {
+            fields.remove("vnp_SecureHashType");
+        }
+        if (fields.containsKey("vnp_SecureHash")) {
+            fields.remove("vnp_SecureHash");
+        }
+
+        String signValue = hashAllFields(fields);
+        // if (signValue.equals(vnp_SecureHash)) {
+        // ZDebug.gI().ZigDebug("Valid hash");
+        // } else {
+        // ZDebug.gI().ZigDebug("Invalid hash: " + signValue + " - " + vnp_SecureHash);
+        // }
+        return signValue.equals(vnp_SecureHash);
     }
 
 }
