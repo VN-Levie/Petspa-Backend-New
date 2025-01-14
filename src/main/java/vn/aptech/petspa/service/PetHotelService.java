@@ -35,7 +35,7 @@ public class PetHotelService {
 
         // Loại bỏ các phòng đã được đặt trong khoảng thời gian yêu cầu
         return rooms.stream()
-                .filter(room -> petHotelRoomDetailRepository.findByPetHotelRoomId(room.getId()).stream()
+                .filter(room -> petHotelRoomDetailRepository.findByPetHotelRoom_Id(room.getId()).stream()
                         .noneMatch(detail -> !(detail.getCheckOutTime().isBefore(checkIn) ||
                                 detail.getCheckInTime().isAfter(checkOut))))
                 .collect(Collectors.toList());
@@ -43,13 +43,13 @@ public class PetHotelService {
 
     // check if room is available
     public boolean isRoomAvailable(Long roomId, LocalDateTime checkIn, LocalDateTime checkOut) {
-        return petHotelRoomDetailRepository.findByPetHotelRoomId(roomId).stream()
+        return petHotelRoomDetailRepository.findByPetHotelRoom_Id(roomId).stream()
                 .noneMatch(detail -> !(detail.getCheckOutTime().isBefore(checkIn) ||
                         detail.getCheckInTime().isAfter(checkOut)));
     }
 
     public boolean isRoomAvailable(Long id, LocalDate date, LocalDate endDate) {
-        return petHotelRoomDetailRepository.findByPetHotelRoomId(id).stream()
+        return petHotelRoomDetailRepository.findByPetHotelRoom_Id(id).stream()
                 .noneMatch(detail -> !(detail.getCheckOutTime().toLocalDate().isBefore(date) ||
                         detail.getCheckInTime().toLocalDate().isAfter(endDate)));
     }

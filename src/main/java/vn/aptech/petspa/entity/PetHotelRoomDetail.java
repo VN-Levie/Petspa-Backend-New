@@ -33,7 +33,7 @@ public class PetHotelRoomDetail extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pet_hotel_room_id", nullable = false)
-    private PetHotelRoom room; // Phòng nào
+    private PetHotelRoom petHotelRoom; // Phòng nào
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)

@@ -284,7 +284,7 @@ public class OrderService {
                     .orElseThrow(() -> new NotFoundException("Pet not found"));
             order.setPet(pet);
             PetHotelRoomDetail roomDetail = new PetHotelRoomDetail();
-            roomDetail.setRoom(room);
+            roomDetail.setPetHotelRoom(room);
             roomDetail.setOrder(order);
             roomDetail.setPet(pet);
             LocalDateTime checkInTime = LocalDateTime.of(orderDTO.getDate(), LocalTime.of(6, 0));

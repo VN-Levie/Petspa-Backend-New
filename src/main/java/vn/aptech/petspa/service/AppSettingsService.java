@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -18,6 +19,7 @@ import vn.aptech.petspa.entity.AppSettings;
 import vn.aptech.petspa.repository.AppSettingsRepository;
 import vn.aptech.petspa.util.ZDebug;
 
+@Service
 public class AppSettingsService {
     @Autowired
     private AppSettingsRepository appSettingsRepository;

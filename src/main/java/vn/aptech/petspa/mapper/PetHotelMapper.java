@@ -25,8 +25,8 @@ public class PetHotelMapper {
                 petHotelRoom.getDescription(),
                 petHotelRoom.getPrice(),
                 toDto(petHotelRoom.getRoomType()),
-                petHotelRoom.getBookingDetails() != null ? 
-                    petHotelRoom.getBookingDetails().stream()
+                petHotelRoom.getRoomDetails() != null ? 
+                    petHotelRoom.getRoomDetails().stream()
                         .map(PetHotelMapper::toDto)
                         .collect(Collectors.toList()) 
                     : null
