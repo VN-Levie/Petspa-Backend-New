@@ -1,7 +1,5 @@
 package vn.aptech.petspa.entity;
 
-import java.time.LocalDateTime;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,7 +12,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AddressBook extends BaseEntity {
 
-    
+    @Column(name = "freeform_address")
+    private String freeformAddress;
+
+    @Column(name = "street_number")
+    private String streetNumber;
 
     @Column(name = "street")
     private String street;
@@ -22,8 +24,8 @@ public class AddressBook extends BaseEntity {
     @Column(name = "city")
     private String city;
 
-    @Column(name = "state")
-    private String state;
+    @Column(name = "province")
+    private String province;
 
     @Column(name = "postal_code")
     private String postalCode;
@@ -31,12 +33,17 @@ public class AddressBook extends BaseEntity {
     @Column(name = "country")
     private String country;
 
-    //Họ tên, số điện thoại, email, ghi chú
-    @Column(name = "full_name")
-    private String fullName;
+    @Column(name = "latitude")
+    private Double latitude;
 
-    @Column(name = "phone_number")
-    private String phoneNumber;
+    @Column(name = "longitude")
+    private Double longitude;
+
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "phone")
+    private String phone;
 
     @Column(name = "email", nullable = true)
     private String email;
@@ -45,6 +52,4 @@ public class AddressBook extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-   
 }
-

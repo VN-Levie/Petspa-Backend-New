@@ -39,6 +39,7 @@ public class PetService {
 
     @Autowired
     private FileService fileService;
+    
 
     @Transactional(readOnly = true)
     public Page<PetDTO> getUserPets(Long userId, String name, Long petTypeId, Pageable pageable) {
@@ -270,6 +271,10 @@ public class PetService {
         petType.setName(petTypeDTO.getName());
         petType.setDescription(petTypeDTO.getDescription());
         petTypeRepository.save(petType);
+    }
+
+    public boolean isPetTypeNameExists(String name) {
+        return petTypeRepository.findByName(name).isPresent();
     }
 
     public Long countUserPet(Long userId) {

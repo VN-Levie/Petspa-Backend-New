@@ -24,11 +24,6 @@ public interface SpaProductRepository extends JpaRepository<SpaProduct, Long> {
 
     SpaCategory findById(long id);
 
-    @Modifying
-    @Transactional
-    @Query("UPDATE SpaCategory p SET p.deleted = true WHERE p.id = :id")
-    void softDelete(Long id);
-
     // count
     @Query("SELECT COUNT(p) FROM SpaCategory p WHERE p.deleted = false")
     Long countAll();
@@ -48,4 +43,27 @@ public interface SpaProductRepository extends JpaRepository<SpaProduct, Long> {
 
     @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p.id, p.name, p.price, p.imageUrl, p.category.id, p.description) FROM SpaProduct p WHERE p.id = :id AND p.deleted = false")
     Optional<SpaProductDTO> findByIdAndDeletedFalse(Long id);
+
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.name LIKE CONCAT('%', :name, '%') AND p.deleted = false")
+    Page<SpaProductDTO> findByName(String name, Pageable pageable);
+
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.category.id = :categoryId AND p.deleted = false")
+    Page<SpaProductDTO> findByCategoryId(Long categoryId, Pageable pageable);
+
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.name LIKE CONCAT('%', :name, '%') AND p.category.id = :categoryId AND p.deleted = false")
+    Page<SpaProductDTO> findByNameAndCategoryId(String name, Long categoryId, Pageable pageable);
+
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.deleted = false")
+    Page<SpaProductDTO> findAllUndeleted(Pageable pageable);
+
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.deleted = true")
+    Page<SpaProductDTO> findAllDeleted(Pageable pageable);
+
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p")
+    Page<SpaProductDTO> findAllAdmin(Pageable pageable);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE SpaProduct p SET p.deleted = true WHERE p.id = :id")
+    void softDelete(Long id);
 }

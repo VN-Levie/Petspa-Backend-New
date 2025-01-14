@@ -19,15 +19,19 @@ public class ShopProduct extends BaseEntity {
     private String name;
 
     @Column(nullable = false)
-    private BigDecimal price;
+    private Double price;
 
     @Column(nullable = false)
     private String imageUrl;
+
+    @Column(nullable = true)
+    private String description;
+
+    @Column(nullable = true)
+    private Integer quantity;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", nullable = false)
     private ShopCategory category;
 
-    
-    
 }

@@ -1,5 +1,6 @@
 package vn.aptech.petspa.repository;
 
+import vn.aptech.petspa.dto.SpaCategoriesDTO;
 import vn.aptech.petspa.dto.SpaProductDTO;
 
 import vn.aptech.petspa.entity.SpaCategory;
@@ -23,6 +24,12 @@ public interface SpaCategoryRepository extends JpaRepository<SpaCategory, Long> 
 
     SpaCategory findById(long id);
 
+    @Query("SELECT new vn.aptech.petspa.dto.SpaCategoriesDTO(p) FROM SpaCategory p WHERE p.deleted = false")
+    List<SpaCategoriesDTO> findAllUndeleted();
+
+    @Query("SELECT new vn.aptech.petspa.dto.SpaCategoriesDTO(p) FROM SpaCategory p")
+    List<SpaCategoriesDTO> findAllAdmin();
+
     @Modifying
     @Transactional
     @Query("UPDATE SpaCategory p SET p.deleted = true WHERE p.id = :id")
@@ -39,4 +46,6 @@ public interface SpaCategoryRepository extends JpaRepository<SpaCategory, Long> 
     // findAllProductsByCategory
     @Query("SELECT p FROM SpaProduct p WHERE p.category.id = :categoryId AND p.deleted = false")
     List<SpaProductDTO> findAllProductsByCategory(Long categoryId);
+
+
 }
