@@ -10,6 +10,5 @@ import vn.aptech.petspa.entity.PetTag;
 
 public interface PetTagRepository extends JpaRepository<PetTag, Long> {
 
-    Optional<PetTag> findByPetId(Long id);
 
 }
