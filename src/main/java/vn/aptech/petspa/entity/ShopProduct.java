@@ -27,8 +27,8 @@ public class ShopProduct extends BaseEntity {
     @Column(nullable = true)
     private String description;
 
-    @Column(nullable = true)
-    private Integer quantity;
+    @Column(nullable = false)
+    private Integer quantity = 1;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", nullable = false)

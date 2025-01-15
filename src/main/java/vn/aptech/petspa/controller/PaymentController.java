@@ -134,15 +134,16 @@ public class PaymentController {
     }
 
     @PostMapping("/create-payment")
-    public ResponseEntity<ApiResponse> createPay(@RequestParam int orderId , @RequestParam String ip) {
+    public ResponseEntity<ApiResponse> createPay(@RequestParam int orderId, @RequestParam String ip) {
         try {
             Order order = orderService.getOrderById(orderId);
             if (order == null) {
                 return ResponseEntity.ok(new ApiResponse("error"));
             }
-            long amount = (long) (order.getTotalPrice() * 100);           
+            long amount = (long) (order.getTotalPrice() * 100);
             String callBack = "http://localhost:" + 3000 + "/payment/vnpay_ipn";
-            return ResponseEntity.ok(new ApiResponse(callBack));
+            String payUrl = paymentService.createPaymentUrl(amount, orderId, callBack, ip, callBack);
+            return ResponseEntity.ok(new ApiResponse(payUrl));
         } catch (Exception e) {
             return ResponseEntity.ok(new ApiResponse("error"));
         }

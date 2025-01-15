@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -113,64 +114,77 @@ public class OrderService {
         User user = userRepository.findById(orderDTO.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        Order order = orderDTO.toEntity();
-        order.setUser(user);
+        Order newOrder = orderDTO.toEntity();
+        newOrder.setUser(user);
         List<OrderProduct> orderProducts = new ArrayList<>();
-        if (orderDTO.getGoodsType() == GoodsType.SHOP) {
-            for (CartItemDTO cI : orderDTO.getCart()) {
-                ShopProduct shopProduct = shopProductRepository.findById(cI.getId())
-                        .orElseThrow(() -> new NotFoundException("Shop product not found"));
-                if (shopProduct.getQuantity() < cI.getQuantity()) {
-                    throw new IllegalArgumentException("Not enough quantity for product " + shopProduct.getName());
+        switch (orderDTO.getGoodsType()) {
+            case SHOP:
+                processShopOrder(orderDTO, newOrder, orderProducts);
+                break;
+            case PET_TAG:
+                for (CartItemDTO cI : orderDTO.getCart()) {
+                    PetTag petTag = petTagRepository.findById(cI.getId())
+                            .orElseThrow(() -> new NotFoundException("Shop product not found"));
+                    // if (petTag.getQuantity() < cI.getQuantity()) {
+                    // throw new IllegalArgumentException("Not enough quantity for product " +
+                    // petTag.getName());
+                    // }
+
+                    
+
+                    OrderProduct orderProduct = new OrderProduct();
+                    orderProduct.setOrder(newOrder);
+                    orderProduct.setGoodsType(GoodsType.SHOP);
+                    orderProduct.setProductId(petTag.getId());
+                    orderProduct.setQuantity(cI.getQuantity());
+                    orderProduct.setPrice(petTag.getPrice());
+                    orderProducts.add(orderProduct);
                 }
-                OrderProduct orderProduct = new OrderProduct();
-                orderProduct.setOrder(order);
-                orderProduct.setGoodsType(GoodsType.SHOP);
-                orderProduct.setId(shopProduct.getId());
-                orderProduct.setQuantity(cI.getQuantity());
-                orderProduct.setPrice(shopProduct.getPrice());
-                orderProducts.add(orderProduct);
-            }
-        }
-        if (orderDTO.getGoodsType() == GoodsType.PET_TAG) {
-            for (CartItemDTO cI : orderDTO.getCart()) {
-                PetTag petTag = petTagRepository.findById(cI.getId())
-                        .orElseThrow(() -> new NotFoundException("Shop product not found"));
-                if (petTag.getQuantity() < cI.getQuantity()) {
-                    throw new IllegalArgumentException("Not enough quantity for product " + petTag.getName());
-                }
-                OrderProduct orderProduct = new OrderProduct();
-                orderProduct.setOrder(order);
-                orderProduct.setGoodsType(GoodsType.SHOP);
-                orderProduct.setId(petTag.getId());
-                orderProduct.setQuantity(cI.getQuantity());
-                orderProduct.setPrice(petTag.getPrice());
-                orderProducts.add(orderProduct);
-            }
-        }
-        if (orderDTO.getGoodsType() == GoodsType.HOTEL) {
-            processHotelBooking(orderDTO, user, order, orderProducts);
+                break;
+            case HOTEL:
+                processHotelBooking(orderDTO, user, newOrder, orderProducts);
+                break;
+            case SPA:
+                processSpaBooking(orderDTO, user, newOrder, orderProducts);
+                break;
+            default:
+                throw new IllegalArgumentException("Cannot process order for goods type " + orderDTO.getGoodsType());
         }
 
-        // Kiểm tra số slot trong SPA
-        if (orderDTO.getGoodsType() == GoodsType.SPA) {
-            processSpaBooking(orderDTO, user, order, orderProducts);
-        }
-
-        order.setStatus(OrderStatusType.PENDING);
-        orderRepository.save(order);
+        newOrder.setStatus(OrderStatusType.PENDING);
+        orderRepository.save(newOrder);
 
         PaymentStatus paymentStatus = new PaymentStatus();
-        paymentStatus.setOrder(order);
+        paymentStatus.setOrder(newOrder);
         paymentStatus.setStatus(PaymentStatusType.PENDING);
         paymentStatus.setPaymentType(orderDTO.getPaymentMethod());
         paymentStatusRepository.save(paymentStatus);
 
         DeliveryStatus deliveryStatus = new DeliveryStatus();
-        deliveryStatus.setOrder(order);
+        deliveryStatus.setOrder(newOrder);
         deliveryStatus.setStatus(DeliveryStatusType.PENDING);
         deliveryStatusRepository.save(deliveryStatus);
-        return order;
+        return newOrder;
+    }
+
+    private void processShopOrder(OrderRequestDTO orderDTO, Order order, List<OrderProduct> orderProducts) {
+        for (CartItemDTO cI : orderDTO.getCart()) {
+            ShopProduct shopProduct = shopProductRepository.findById(cI.getId())
+                    .orElseThrow(() -> new NotFoundException("Shop product not found"));
+            if (shopProduct.getQuantity() < cI.getQuantity()) {
+                throw new IllegalArgumentException("Not enough quantity for product " + shopProduct.getName());
+            }
+            OrderProduct orderProduct = new OrderProduct();
+            orderProduct.setOrder(order);
+            orderProduct.setGoodsType(GoodsType.SHOP);
+            orderProduct.setProductId(shopProduct.getId());
+            orderProduct.setQuantity(cI.getQuantity());
+            orderProduct.setPrice(shopProduct.getPrice());
+            orderProducts.add(orderProduct);
+
+            shopProduct.setQuantity(shopProduct.getQuantity() - cI.getQuantity());
+            shopProductRepository.save(shopProduct);
+        }
     }
 
     private void processSpaBooking(OrderRequestDTO orderDTO, User user, Order order, List<OrderProduct> orderProducts) {
@@ -226,7 +240,7 @@ public class OrderService {
             OrderProduct orderProduct = new OrderProduct();
             orderProduct.setOrder(order);
             orderProduct.setGoodsType(GoodsType.SPA);
-            orderProduct.setId(spaProduct.getId());
+            orderProduct.setProductId(spaProduct.getId());
             orderProduct.setQuantity(cI.getQuantity());
             orderProduct.setPrice(spaProduct.getPrice());
             orderProducts.add(orderProduct);
@@ -298,6 +312,9 @@ public class OrderService {
                 throw new IllegalArgumentException(
                         "Room " + room.getName() + " is not available for the selected date");
             }
+            if (room.getRoomDetails() == null) {
+                room.setRoomDetails(new HashSet<PetHotelRoomDetail>());
+            }
             Pet pet = petRepository.findByIdAndUser(orderDTO.getPetId(), user.getId())
                     .orElseThrow(() -> new NotFoundException("Pet not found"));
             order.setPet(pet);
@@ -311,10 +328,12 @@ public class OrderService {
             roomDetail.setCheckOutTime(checkOutTime);
             roomDetail.setStatus(OrderStatusType.PENDING);
 
+            room.getRoomDetails().add(roomDetail);
+
             OrderProduct orderProduct = new OrderProduct();
             orderProduct.setOrder(order);
             orderProduct.setGoodsType(GoodsType.HOTEL);
-            orderProduct.setId(room.getId());
+            orderProduct.setProductId(room.getId());
             orderProduct.setQuantity(cI.getQuantity());
             orderProduct.setPrice(room.getPrice());
             orderProducts.add(orderProduct);
