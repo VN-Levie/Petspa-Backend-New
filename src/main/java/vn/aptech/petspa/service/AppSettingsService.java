@@ -48,26 +48,6 @@ public class AppSettingsService {
             }
         }
 
-        Optional<AppSettings> workingHoursSetting = appSettingsRepository.findByKey("weeklyWorkingHours");
-        if (workingHoursSetting.isPresent() && workingHoursSetting.get().getValue() != null) {
-            // Chuyển đổi JSON thành danh sách đối tượng
-            List<Map<String, String>> weeklyWorkingHours = objectMapper.readValue(
-                    workingHoursSetting.get().getValue(),
-                    new TypeReference<>() {
-                    });
-
-            // Tìm cấu hình cho ngày hiện tại
-            for (Map<String, String> workingHour : weeklyWorkingHours) {
-                if (dayOfWeek.name().equals(workingHour.get("dayOfWeek"))) {
-                    // Kiểm tra nếu là ngày nghỉ hoàn toàn
-                    boolean isRestDay = Boolean.parseBoolean(workingHour.getOrDefault("isRestDay", "false"));
-                    if (isRestDay) {
-                        return true; // Ngày nghỉ hoàn toàn
-                    }
-                }
-            }
-        }
-
         return false;
     }
 

@@ -44,7 +44,7 @@ public class AdminShopProductController {
         Pageable pageable = PageRequest.of(page, size);
 
         try {
-            Page<ShopProductDTO> productDTOPage = shopProductService.getShopProducts(name, categoryId, pageable);
+            Page<ShopProductDTO> productDTOPage = shopProductService.getShopProductsAdmin(name, categoryId, pageable);
             return ResponseEntity.ok(new PagedApiResponse(
                     "Successfully retrieved products",
                     productDTOPage.getContent(),
@@ -97,11 +97,11 @@ public class AdminShopProductController {
     @PostMapping("/delete")
     public ResponseEntity<ApiResponse> deleteShopProduct(
             @RequestHeader("Authorization") String token,
-            @RequestBody ShopProductDTO productDTO) {
+            @RequestBody Long productId) {
 
-        shopProductService.deleteShopProduct(null, productDTO);
+        int del = shopProductService.deleteShopProduct(null, productId);
 
-        return ResponseEntity.ok(new ApiResponse("Delete product successfully"));
+        return ResponseEntity.ok(new ApiResponse(del == 1 ? "Hide product successfully" : "Show product successfully"));
     }
 
     // Get all categories

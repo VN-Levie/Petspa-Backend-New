@@ -129,7 +129,7 @@ public class AuthController {
             userDTO.setVerified(user.isVerified());
             userDTO.setToken(jwtToken);
             userDTO.setRefreshToken(refreshToken);
-            userDTO.setRole(user.getRoles().stream().findFirst().orElse("USER"));
+            userDTO.setRole(user.getRoles().stream().findFirst().orElse("User"));
             ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Login successfully!", userDTO);
             return ResponseEntity.ok(response);
 
@@ -175,7 +175,7 @@ public class AuthController {
                 userDTO.setVerified(user.isVerified());
                 userDTO.setToken(jwtToken);
                 userDTO.setRefreshToken(refreshToken);
-                userDTO.setRole(user.getRoles().stream().findFirst().orElse("USER"));
+                userDTO.setRole(user.getRoles().stream().findFirst().orElse("User"));
                 ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Login successfully!", userDTO);
                 return ResponseEntity.ok(response);
             }
@@ -218,7 +218,7 @@ public class AuthController {
                 userDTO.setVerified(user.isVerified());
                 userDTO.setToken(jwtToken);
                 userDTO.setRefreshToken(refreshToken);
-                userDTO.setRole(user.getRoles().stream().findFirst().orElse("USER"));
+                userDTO.setRole(user.getRoles().stream().findFirst().orElse("User"));
                 ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Token refreshed successfully!", userDTO);
                 return ResponseEntity.ok(response);
             } else {
@@ -324,7 +324,7 @@ public class AuthController {
             // Mã hóa mật khẩu và lưu user mới
             String encodedPassword = passwordEncoder.encode(registerDTO.getPassword());
 
-            User newUser = new User(registerDTO.getName(), email, encodedPassword, Set.of("USER"), false);
+            User newUser = new User(registerDTO.getName(), email, encodedPassword, Set.of("User"), false);
             userRepository.save(newUser);
             VerifyDTO verifyDTO = new VerifyDTO(newUser.getId(), email, newUser.isVerified());
             return ResponseEntity.status(HttpStatus.CREATED)

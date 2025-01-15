@@ -80,7 +80,7 @@ public class FileService {
 
             // Nếu file đã tồn tại, thêm hậu tố ngẫu nhiên
             while (Files.exists(filePath)) {
-                fileName = UUID.randomUUID().toString() + "-" + cleanFileName;
+                fileName = System.currentTimeMillis() + "-" + cleanFileName;
                 filePath = uploadPath.resolve(fileName);
             }
 
@@ -109,7 +109,7 @@ public class FileService {
             return fileName;
         }
         String extension = fileName.substring(fileName.lastIndexOf("."));
-        return System.currentTimeMillis() + "-" + UUID.randomUUID().toString() + extension;
+        return UUID.randomUUID().toString() + extension;
     }
 
     private void validateFile(MultipartFile file) {

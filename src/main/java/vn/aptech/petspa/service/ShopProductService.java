@@ -37,13 +37,26 @@ public class ShopProductService {
     @Transactional(readOnly = true)
     public Page<ShopProductDTO> getShopProducts(String name, Long categoryId, Pageable pageable) {
         if (name != null && categoryId != null) {
-            return shopProductRepository.findByNameAndCategoryId(name, categoryId, pageable);
+            return shopProductRepository.findByNameAndCategoryId(name, categoryId, false, pageable);
         } else if (name != null) {
-            return shopProductRepository.findByName(name, pageable);
+            return shopProductRepository.findByName(name, false, pageable);
         } else if (categoryId != null) {
-            return shopProductRepository.findByCategoryId(categoryId, pageable);
+            return shopProductRepository.findByCategoryId(categoryId, false, pageable);
         } else {
             return shopProductRepository.findAllUndeleted(pageable);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ShopProductDTO> getShopProductsAdmin(String name, Long categoryId, Pageable pageable) {
+        if (name != null && categoryId != null) {
+            return shopProductRepository.findByNameAndCategoryId(name, categoryId, true, pageable);
+        } else if (name != null) {
+            return shopProductRepository.findByName(name, true, pageable);
+        } else if (categoryId != null) {
+            return shopProductRepository.findByCategoryId(categoryId, true, pageable);
+        } else {
+            return shopProductRepository.findAllAdmin(pageable);
         }
     }
 
@@ -67,6 +80,7 @@ public class ShopProductService {
             product.setName(productDTO.getName());
             product.setPrice(productDTO.getPrice());
             product.setImageUrl(fileUrl);
+            product.setDescription(productDTO.getDescription());
             product.setCategory(category);
 
             shopProductRepository.save(product);
@@ -99,7 +113,7 @@ public class ShopProductService {
             product.setImageUrl(fileUrl);
             product.setCategory(shopCategoryRepository.findById(productDTO.getCategoryId())
                     .orElseThrow(() -> new IllegalArgumentException("Category not found")));
-
+            product.setDescription(productDTO.getDescription());
             shopProductRepository.save(product);
 
         } catch (IOException e) {
@@ -118,16 +132,21 @@ public class ShopProductService {
         product.setPrice(productDTO.getPrice());
         product.setCategory(shopCategoryRepository.findById(productDTO.getCategoryId())
                 .orElseThrow(() -> new NotFoundException("Category not found")));
-
+        product.setDescription(productDTO.getDescription());
         shopProductRepository.save(product);
     }
 
     @Transactional
-    public void deleteShopProduct(User user, ShopProductDTO productDTO) {
-        ShopProduct product = shopProductRepository.findById(productDTO.getId())
+    public int deleteShopProduct(User user, Long productId) {
+        ShopProduct product = shopProductRepository.findById(productId)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
-
+        if (product.getDeleted()) {
+            shopProductRepository.unDelete(product.getId());
+            return 0;
+        }
         shopProductRepository.softDelete(product.getId());
+
+        return 1;
     }
 
     public ShopProductDTO getShopProductById(Long productId) {
@@ -172,18 +191,18 @@ public class ShopProductService {
         // Tìm danh mục hiện tại
         ShopCategory category = shopCategoryRepository.findById(categoryDTO.getId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
-    
+
         // Kiểm tra trùng lặp tên danh mục, loại trừ danh mục hiện tại
         shopCategoryRepository.findByName(categoryDTO.getName())
                 .filter(existingCategory -> !existingCategory.getId().equals(category.getId()))
                 .ifPresent(existingCategory -> {
                     throw new IllegalArgumentException("Category already exists");
                 });
-    
+
         // Cập nhật danh mục
         category.setName(categoryDTO.getName());
         category.setDescription(categoryDTO.getDescription());
-    
+
         // Lưu lại thay đổi
         shopCategoryRepository.save(category);
     }
@@ -195,6 +214,5 @@ public class ShopProductService {
 
         shopCategoryRepository.softDelete(category.getId());
     }
-    
 
 }
