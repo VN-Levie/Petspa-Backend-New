@@ -19,6 +19,7 @@ public class ShopProductDTO {
     private Long categoryId;
     private String imageUrl;
     private Integer quantity;
+    private Boolean isDeleted = false;
 
     public ShopProductDTO(ShopProduct shopProduct) {
         this.id = shopProduct.getId();
@@ -28,6 +29,7 @@ public class ShopProductDTO {
         this.categoryId = shopProduct.getCategory().getId();
         this.imageUrl = shopProduct.getImageUrl();
         this.quantity = shopProduct.getQuantity();
+        this.isDeleted = shopProduct.getDeleted();
     }
 
 }

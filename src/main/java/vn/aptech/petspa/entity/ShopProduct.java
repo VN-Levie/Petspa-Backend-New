@@ -24,7 +24,7 @@ public class ShopProduct extends BaseEntity {
     @Column(nullable = false)
     private String imageUrl;
 
-    @Column(nullable = true)
+    @Column(columnDefinition = "TEXT", nullable = true)
     private String description;
 
     @Column(nullable = false)

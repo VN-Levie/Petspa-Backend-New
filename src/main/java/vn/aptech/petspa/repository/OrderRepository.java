@@ -32,7 +32,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         Page<OrderDTO> findByUserIdAndSearchAndGoodsTypeAndDate(
                         @Param("userId") Long userId,
                         @Param("search") String search,
-                        @Param("goodsType") String goodsType,
+                        @Param("goodsType") GoodsType goodsType,
                         @Param("date") String date,
                         Pageable pageable);
 
@@ -47,7 +47,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         Page<OrderDTO> findByUserIdAndSearchAndGoodsType(
                         @Param("userId") Long userId,
                         @Param("search") String search,
-                        @Param("goodsType") String goodsType,
+                        @Param("goodsType") GoodsType goodsType,
                         Pageable pageable);
 
         @Query("""
@@ -74,7 +74,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                         """)
         Page<OrderDTO> findByUserIdAndGoodsTypeAndDate(
                         @Param("userId") Long userId,
-                        @Param("goodsType") String goodsType,
+                        @Param("goodsType") GoodsType goodsType,
                         @Param("date") String date,
                         Pageable pageable);
 
@@ -99,7 +99,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                         """)
         Page<OrderDTO> findByUserIdAndGoodsType(
                         @Param("userId") Long userId,
-                        @Param("goodsType") String goodsType,
+                        @Param("goodsType") GoodsType goodsType,
                         Pageable pageable);
 
         @Query("""

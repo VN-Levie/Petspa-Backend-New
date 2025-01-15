@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -35,6 +36,7 @@ import vn.aptech.petspa.repository.UserRepository;
 import vn.aptech.petspa.service.OrderService;
 import vn.aptech.petspa.service.PetService;
 import vn.aptech.petspa.util.ApiResponse;
+import vn.aptech.petspa.util.GoodsType;
 import vn.aptech.petspa.util.JwtUtil;
 import vn.aptech.petspa.util.PagedApiResponse;
 import vn.aptech.petspa.util.ZDebug;
@@ -51,12 +53,11 @@ public class UserOrderController {
     @GetMapping("/list")
     public ResponseEntity<ApiResponse> listUserPet(
             @RequestHeader("Authorization") String token,
-            @RequestParam(defaultValue = "0") int page, // Trang mặc định là 0
-            @RequestParam(defaultValue = "10") int size, // Kích thước mặc định là 10
-            @RequestParam(required = false) String date, // Tìm kiếm theo tên (không bắt buộc)
-            @RequestParam(required = false) String search, // Tìm kiếm theo tên (không bắt buộc)
-            @RequestParam(required = false) String goodsType // Lọc theo loại pet (không bắt buộc)
-    ) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String goodsType) {
         Long userId = jwtUtil.extractUserId(token);
         if (userId == 0) {
             return ApiResponse.unauthorized("Invalid token");
@@ -65,19 +66,28 @@ public class UserOrderController {
         if (page < 0 || size <= 0) {
             return ApiResponse.badRequest("Invalid page or size values");
         }
-        size = Math.min(size, 100); // Giới hạn kích thước trang tối đa là 100
-        Pageable pageable = PageRequest.of(page, size); // Tạo Pageable object
+        size = Math.min(size, 100);
+        Pageable pageable = PageRequest.of(page, size);
+
+        GoodsType type = null;
+        if (goodsType != null) {
+            try {
+                type = GoodsType.valueOf(goodsType.toUpperCase()); // Chuyển từ String sang Enum
+                ZDebug.gI().ZigDebug("goodsType: " + type.toString());
+            } catch (IllegalArgumentException e) {
+                return ApiResponse.badRequest("Invalid goods type value");
+            }
+        }
 
         try {
-            Page<OrderDTO> orderDTOPage = orderService.getUserOrder(userId, search, goodsType, date, pageable);
+            Page<OrderDTO> orderDTOPage = orderService.getUserOrder(userId, search, type, date, pageable);
             return ResponseEntity.ok(new PagedApiResponse(
                     "Successfully retrieved pets",
-                    orderDTOPage.getContent(), // Danh sách pets
-                    orderDTOPage.getNumber(), // Trang hiện tại
-                    orderDTOPage.getSize(), // Kích thước mỗi trang
-                    orderDTOPage.getTotalElements(), // Tổng số bản ghi
-                    orderDTOPage.getTotalPages() // Tổng số trang
-            ));
+                    orderDTOPage.getContent(),
+                    orderDTOPage.getNumber(),
+                    orderDTOPage.getSize(),
+                    orderDTOPage.getTotalElements(),
+                    orderDTOPage.getTotalPages()));
         } catch (Exception e) {
             e.printStackTrace();
             return ApiResponse.badRequest(e.getMessage());
@@ -95,5 +105,44 @@ public class UserOrderController {
 
         Order order = orderService.createOrder(parsedorderDTO);
         return ResponseEntity.ok(new ApiResponse("Create order successfully", order));
+    }
+
+    // order detail
+    @GetMapping("/detail/{orderId}")
+    public ResponseEntity<ApiResponse> orderDetail(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long orderId) {
+        try {
+            Long userId = jwtUtil.extractUserId(token);
+            if (userId == 0) {
+                return ApiResponse.unauthorized("Invalid token");
+            }
+            OrderDTO orderDTO = orderService.getOrderDetail(orderId);
+            if (orderDTO == null) {
+                return ApiResponse.notFound("Order not found");
+            }
+            if (orderDTO.getUserId() != userId) {
+                return ApiResponse.unauthorized("You are not authorized to view this order");
+            }
+
+            return ResponseEntity.ok(new ApiResponse("Successfully retrieved order detail", orderDTO));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.badRequest(e.getMessage());
+        }
+    }
+
+    // cancel order
+    @PostMapping("/cancel/{orderId}")
+    public ResponseEntity<ApiResponse> cancelOrder(
+            @PathVariable Long orderId) {
+
+        try {
+            orderService.cancelOrder(orderId);
+            return ResponseEntity.ok(new ApiResponse("Cancel order successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ApiResponse.badRequest(e.getMessage());
+        }
     }
 }

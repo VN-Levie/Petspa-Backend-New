@@ -25,9 +25,14 @@ public interface ShopCategoryRepository extends JpaRepository<ShopCategory, Long
     @Query("UPDATE ShopCategory p SET p.deleted = true WHERE p.id = :id")
     void softDelete(Long id);
 
-    @Query("SELECT new vn.aptech.petspa.dto.ShopCategoryDTO(p.id, p.name, p.description) FROM ShopCategory p WHERE p.deleted = false")
+    @Query("SELECT new vn.aptech.petspa.dto.ShopCategoryDTO(p.id, p.name, p.description, p.deleted) FROM ShopCategory p WHERE p.deleted = false")
     List<ShopCategoryDTO> findAllUndeleted();
 
-    @Query("SELECT new vn.aptech.petspa.dto.ShopCategoryDTO(p.id, p.name, p.description) FROM ShopCategory p")
+    @Query("SELECT new vn.aptech.petspa.dto.ShopCategoryDTO(p.id, p.name, p.description, p.deleted) FROM ShopCategory p")
     List<ShopCategoryDTO> findAllAdmin();
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE ShopCategory p SET p.deleted = false WHERE p.id = :id")
+    void unDelete(Long id);
 }

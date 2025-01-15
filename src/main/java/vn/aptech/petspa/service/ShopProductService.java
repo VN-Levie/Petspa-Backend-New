@@ -37,11 +37,11 @@ public class ShopProductService {
     @Transactional(readOnly = true)
     public Page<ShopProductDTO> getShopProducts(String name, Long categoryId, Pageable pageable) {
         if (name != null && categoryId != null) {
-            return shopProductRepository.findByNameAndCategoryId(name, categoryId, false, pageable);
+            return shopProductRepository.findByNameAndCategoryId(name, categoryId, pageable);
         } else if (name != null) {
-            return shopProductRepository.findByName(name, false, pageable);
+            return shopProductRepository.findByName(name, pageable);
         } else if (categoryId != null) {
-            return shopProductRepository.findByCategoryId(categoryId, false, pageable);
+            return shopProductRepository.findByCategoryId(categoryId, pageable);
         } else {
             return shopProductRepository.findAllUndeleted(pageable);
         }
@@ -50,11 +50,11 @@ public class ShopProductService {
     @Transactional(readOnly = true)
     public Page<ShopProductDTO> getShopProductsAdmin(String name, Long categoryId, Pageable pageable) {
         if (name != null && categoryId != null) {
-            return shopProductRepository.findByNameAndCategoryId(name, categoryId, true, pageable);
+            return shopProductRepository.findByNameAndCategoryIdAdmin(name, categoryId, pageable);
         } else if (name != null) {
-            return shopProductRepository.findByName(name, true, pageable);
+            return shopProductRepository.findByNameAdmin(name, pageable);
         } else if (categoryId != null) {
-            return shopProductRepository.findByCategoryId(categoryId, true, pageable);
+            return shopProductRepository.findByCategoryIdAdmin(categoryId, pageable);
         } else {
             return shopProductRepository.findAllAdmin(pageable);
         }
@@ -208,11 +208,15 @@ public class ShopProductService {
     }
 
     // delete category
-    public void deleteCategory(Long categoryId) {
+    public int deleteCategory(Long categoryId) {
         ShopCategory category = shopCategoryRepository.findById(categoryId)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
-
+        if(category.getDeleted()) {
+            shopCategoryRepository.unDelete(category.getId());
+            return 0;
+        }
         shopCategoryRepository.softDelete(category.getId());
+        return 1;
     }
 
 }

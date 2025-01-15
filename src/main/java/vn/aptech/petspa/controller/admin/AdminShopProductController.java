@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -94,12 +95,12 @@ public class AdminShopProductController {
         return ResponseEntity.ok(new ApiResponse("Edit product successfully"));
     }
 
-    @PostMapping("/delete")
+    @PostMapping(value = "/delete", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse> deleteShopProduct(
-            @RequestHeader("Authorization") String token,
-            @RequestBody Long productId) {
-
-        int del = shopProductService.deleteShopProduct(null, productId);
+            @RequestParam("productDTO") String productDTOJson) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ShopProductDTO productDTO = objectMapper.readValue(productDTOJson, ShopProductDTO.class);
+        int del = shopProductService.deleteShopProduct(null, productDTO.getId());
 
         return ResponseEntity.ok(new ApiResponse(del == 1 ? "Hide product successfully" : "Show product successfully"));
     }
@@ -138,14 +139,27 @@ public class AdminShopProductController {
         return ResponseEntity.ok(new ApiResponse("Update category successfully"));
     }
 
-    // delete category
-    @PostMapping("/category/delete")
-    public ResponseEntity<ApiResponse> deleteCategory(
-            @RequestHeader("Authorization") String token,
-            @RequestParam("categoryId") Long categoryId) {
+    //add category
+    @PostMapping(value = "/category/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse> addCategory(
+            @RequestParam("categoryDTO") String categoryDTOJson) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ShopCategoryDTO categoryDTO = objectMapper.readValue(categoryDTOJson, ShopCategoryDTO.class);
 
-        shopProductService.deleteCategory(categoryId);
-        return ResponseEntity.ok(new ApiResponse("Delete category successfully"));
+        shopProductService.addCategory(categoryDTO);
+        return ResponseEntity.ok(new ApiResponse("Add category successfully"));
+    }
+
+    // delete category
+    @PostMapping(value = "/category/delete", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse> deleteCategory(
+            @RequestParam("categoryDTO") String productDTOJson) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ShopCategoryDTO categoryDTO = objectMapper.readValue(productDTOJson, ShopCategoryDTO.class);
+
+        int del = shopProductService.deleteCategory(categoryDTO.getId());
+        return ResponseEntity
+                .ok(new ApiResponse(del == 1 ? "Hide category successfully" : "Show category successfully"));
     }
 
 }

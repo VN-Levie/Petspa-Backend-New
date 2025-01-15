@@ -90,7 +90,8 @@ public class OrderService {
     private FileService fileService;
 
     @Transactional(readOnly = true)
-    public Page<OrderDTO> getUserOrder(Long userId, String search, String goodsType, String date, Pageable pageable) {
+    public Page<OrderDTO> getUserOrder(Long userId, String search, GoodsType goodsType, String date,
+            Pageable pageable) {
         if (search != null && goodsType != null && date != null) {
             return orderRepository.findByUserIdAndSearchAndGoodsTypeAndDate(userId, search, goodsType, date, pageable);
         } else if (search != null && goodsType != null) {
@@ -168,6 +169,9 @@ public class OrderService {
         newOrder.setPaymentStatuses(List.of(paymentStatus));
         newOrder.setDeliveryStatuses(List.of(deliveryStatus));
         newOrder.setStatus(OrderStatusType.PENDING);
+        if (orderDTO.getPaymentMethod() == PaymentType.COD) {
+            newOrder.setStatus(OrderStatusType.CONFIRMED);
+        }
         orderRepository.save(newOrder);
         return newOrder;
     }
@@ -353,6 +357,23 @@ public class OrderService {
 
     @Transactional
     public void saveOrder(Order order) {
+        orderRepository.save(order);
+    }
+
+    @Transactional
+    public OrderDTO getOrderDetail(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+        return new OrderDTO(order);
+    }
+
+    public void cancelOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new NotFoundException("Order not found"));
+        if (order.getStatus() != OrderStatusType.PENDING) {
+            throw new IllegalArgumentException("Cannot cancel order with status " + order.getStatus());
+        }
+        order.setStatus(OrderStatusType.CANCELLED);
         orderRepository.save(order);
     }
 

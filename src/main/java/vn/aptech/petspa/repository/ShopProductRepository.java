@@ -15,18 +15,26 @@ import vn.aptech.petspa.entity.ShopProduct;
 @Repository
 public interface ShopProductRepository extends JpaRepository<ShopProduct, Long> {
 
-    @Query("SELECT new vn.aptech.petspa.dto.ShopProductDTO(p) FROM ShopProduct p WHERE p.name LIKE CONCAT('%', :name, '%') AND p.deleted = :deleted")
-    Page<ShopProductDTO> findByName(@Param("name") String name, Boolean deleted, Pageable pageable);
+    @Query("SELECT new vn.aptech.petspa.dto.ShopProductDTO(p) FROM ShopProduct p WHERE p.name LIKE CONCAT('%', :name, '%') AND p.deleted = false AND p.category.deleted = false")
+    Page<ShopProductDTO> findByName(@Param("name") String name, Pageable pageable);
 
-    @Query("SELECT new vn.aptech.petspa.dto.ShopProductDTO(p) FROM ShopProduct p WHERE p.category.id = :categoryId AND p.deleted = :deleted")
-    Page<ShopProductDTO> findByCategoryId(Long categoryId, Boolean deleted, Pageable pageable);
+    @Query("SELECT new vn.aptech.petspa.dto.ShopProductDTO(p) FROM ShopProduct p WHERE p.name LIKE CONCAT('%', :name, '%')")
+    Page<ShopProductDTO> findByNameAdmin(@Param("name") String name, Pageable pageable);
 
-    @Query("SELECT new vn.aptech.petspa.dto.ShopProductDTO(p) FROM ShopProduct p WHERE p.name LIKE CONCAT('%', :name, '%') AND p.category.id = :categoryId AND p.deleted = :deleted")
-    Page<ShopProductDTO> findByNameAndCategoryId(@Param("name") String name, Long categoryId, Boolean deleted,
-            Pageable pageable);
+    @Query("SELECT new vn.aptech.petspa.dto.ShopProductDTO(p) FROM ShopProduct p WHERE p.category.id = :categoryId AND p.deleted = false AND p.category.deleted = false")
+    Page<ShopProductDTO> findByCategoryId(Long categoryId, Pageable pageable);
+
+    @Query("SELECT new vn.aptech.petspa.dto.ShopProductDTO(p) FROM ShopProduct p WHERE p.category.id = :categoryId")
+    Page<ShopProductDTO> findByCategoryIdAdmin(Long categoryId, Pageable pageable);
+
+    @Query("SELECT new vn.aptech.petspa.dto.ShopProductDTO(p) FROM ShopProduct p WHERE p.name LIKE CONCAT('%', :name, '%') AND p.category.id = :categoryId AND p.deleted = false AND p.category.deleted = false")
+    Page<ShopProductDTO> findByNameAndCategoryId(@Param("name") String name, Long categoryId, Pageable pageable);
+
+    @Query("SELECT new vn.aptech.petspa.dto.ShopProductDTO(p) FROM ShopProduct p WHERE p.name LIKE CONCAT('%', :name, '%') AND p.category.id = :categoryId")
+    Page<ShopProductDTO> findByNameAndCategoryIdAdmin(@Param("name") String name, Long categoryId, Pageable pageable);
 
     // find all undeleted products
-    @Query("SELECT new vn.aptech.petspa.dto.ShopProductDTO(p) FROM ShopProduct p WHERE p.deleted = false")
+    @Query("SELECT new vn.aptech.petspa.dto.ShopProductDTO(p) FROM ShopProduct p WHERE p.deleted = false AND p.category.deleted = false")
     Page<ShopProductDTO> findAllUndeleted(Pageable pageable);
 
     @Query("SELECT new vn.aptech.petspa.dto.ShopProductDTO(p) FROM ShopProduct p WHERE p.deleted = true")
