@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "users")
 @Data
@@ -22,6 +24,7 @@ public class User extends BaseEntity {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @JsonIgnore
     @NotBlank(message = "Password is required")
     private String password;
 

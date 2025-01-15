@@ -140,101 +140,12 @@ public class PaymentController {
             if (order == null) {
                 return ResponseEntity.ok(new ApiResponse("error"));
             }
-            long amount = (long) (order.getTotalPrice() * 100);
+            long amount = (long) (order.getTotalPrice() * 100) * 23_000;
             String callBack = "http://localhost:" + 3000 + "/payment/vnpay_ipn";
             String payUrl = paymentService.createPaymentUrl(amount, orderId, callBack, ip, callBack);
             return ResponseEntity.ok(new ApiResponse(payUrl));
         } catch (Exception e) {
-            return ResponseEntity.ok(new ApiResponse("error"));
-        }
-    }
-
-    @PostMapping("/create-payment-old")
-    public ResponseEntity<ApiResponse> addUserPet(@RequestParam("paymentDTO") String paymentRequestJson)
-            throws JsonProcessingException {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            PaymentDTO paymentDTO = objectMapper.readValue(paymentRequestJson, PaymentDTO.class);
-            long amount = paymentDTO.getAmount() * 100;
-            String bankCode = paymentDTO.getBankCode();
-            String vnp_TxnRef = getRandomNumber(8);
-            String vnp_IpAddr = paymentDTO.getIp();
-
-            Map<String, String> vnp_Params = new HashMap<>();
-            vnp_Params.put("vnp_Version", vnp_Version);
-            vnp_Params.put("vnp_Command", vnp_Command);
-            vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
-            vnp_Params.put("vnp_Amount", String.valueOf(amount));
-            vnp_Params.put("vnp_CurrCode", "VND");
-
-            if (bankCode != null && !bankCode.isEmpty()) {
-                vnp_Params.put("vnp_BankCode", bankCode);
-            }
-            vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
-            vnp_Params.put("vnp_OrderInfo", "Thanh toan don hang" + vnp_TxnRef);
-            vnp_Params.put("vnp_OrderType", orderType);
-
-            String locate = paymentDTO.getLanguage();
-            if (locate != null && !locate.isEmpty()) {
-                vnp_Params.put("vnp_Locale", locate);
-            } else {
-                vnp_Params.put("vnp_Locale", "vn");
-            }
-            vnp_Params.put("vnp_ReturnUrl", "http://localhost:" + 3000 + "/payment/vnpay_ipn");
-            vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
-            Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-            String vnp_CreateDate = formatter.format(cld.getTime());
-            vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
-
-            cld.add(Calendar.MINUTE, 15);
-            String vnp_ExpireDate = formatter.format(cld.getTime());
-            vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
-            List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
-            Collections.sort(fieldNames);
-            StringBuilder hashData = new StringBuilder();
-            StringBuilder query = new StringBuilder();
-            Iterator<String> itr = fieldNames.iterator();
-            while (itr.hasNext()) {
-                String fieldName = (String) itr.next();
-                String fieldValue = (String) vnp_Params.get(fieldName);
-                if ((fieldValue != null) && (fieldValue.length() > 0)) {
-                    // Build hash data
-                    hashData.append(fieldName);
-                    hashData.append('=');
-                    hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                    // Build query
-                    query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()));
-                    query.append('=');
-                    query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
-                    if (itr.hasNext()) {
-                        query.append('&');
-                        hashData.append('&');
-                    }
-                }
-            }
-            String queryUrl = query.toString();
-            String vnp_SecureHash = hmacSHA512(vnp_HashSecret, hashData.toString());
-
-            queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
-            String paymentUrl = vnp_PayUrl + "?" + queryUrl;
-
-            JsonObject job = new JsonObject();
-            job.addProperty("code", "00");
-            job.addProperty("message", "success");
-            job.addProperty("data", paymentUrl);
-
-            return ResponseEntity.ok(new ApiResponse(paymentUrl));
-
-        } catch (BadCredentialsException e) {
-
-            ApiResponse response = new ApiResponse(ApiResponse.STATUS_UNAUTHORIZED, "Invalid email or password!", null);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-            ApiResponse response = new ApiResponse(ApiResponse.STATUS_INTERNAL_SERVER_ERROR,
-                    "An error occurred during login process", null);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ApiResponse.internalServerError(e.getMessage());
         }
     }
 
@@ -279,26 +190,18 @@ public class PaymentController {
             // "f68f584feb09bf55d0c818e5672d131a939e823223af73c9647655f346d706d43b8275dcc31dfec7b7b990f49e533a26bf1b6826abd85709683b3043b6995ee7"
             // }
             if (!verifyTransactionHash(allParams)) {
-                return ResponseEntity.ok(new ApiResponse("error"));
+                return ApiResponse.badRequest("Invalid hash");
             }
 
-            // Lấy mã đơn hàng
-            String vnp_TxnRef = allParams.get("vnp_TxnRef");
-            // phân tích mã đơn hàng
-            String[] orderInfo = vnp_TxnRef.split("_");
-            String orderType = orderInfo[0];
-            long orderId = Long.parseLong(orderInfo[1]);
+            long orderId = Long.parseLong(allParams.get("vnp_TxnRef"));
             Order order = orderService.getOrderById(orderId);
             if (order == null) {
-                return ResponseEntity.ok(new ApiResponse("error"));
-            }
-
-            if (!orderType.equalsIgnoreCase(order.getGoodsType().name())) {
-                return ResponseEntity.ok(new ApiResponse("error"));
+                return ApiResponse.badRequest("Error while processing order id");
             }
 
             if (order.getStatus() != OrderStatusType.PENDING) {
-                return ResponseEntity.ok(new ApiResponse("error"));
+                // return ApiResponse.badRequest("This order has been processed");
+                return ResponseEntity.ok(new ApiResponse("This order has been processed successfully"));
             }
 
             // lấy mã phản hồi vnp_ResponseCode
@@ -310,17 +213,19 @@ public class PaymentController {
             // cập nhật trạng thái đơn hàng
             if (vnp_ResponseCode.equals("00") && vnpPaymentStatus.equals("00")) {
                 order.setStatus(OrderStatusType.CONFIRMED);
+
+                orderService.saveOrder(order);
+                return ResponseEntity.ok(new ApiResponse("Payment success"));
             } else {
                 order.setStatus(OrderStatusType.CANCELLED);
+                return ApiResponse.badRequest("Payment failed");
             }
-
-            orderService.saveOrder(order);
 
             // checkOrderStatus: 00: Thanh toán thành công, 01: Thanh toán thất bại, 02: Đã
             // hủy, 03: Đang chờ xử lý
-            return ResponseEntity.ok(new ApiResponse(allParams));
+
         } catch (Exception e) {
-            return ResponseEntity.ok(new ApiResponse("error"));
+            return ApiResponse.internalServerError(e.getMessage());
         }
     }
 
@@ -352,4 +257,20 @@ public class PaymentController {
         return signValue.equals(vnp_SecureHash);
     }
 
+    // check and update order status
+    @GetMapping("/check-order-status")
+    public ResponseEntity<ApiResponse> checkOrderStatus(@RequestParam int orderId) {
+        try {
+            Order order = orderService.getOrderById(orderId);
+            if (order == null) {
+                return ResponseEntity.ok(new ApiResponse("error"));
+            }
+            if (order.getStatus() == OrderStatusType.CONFIRMED) {
+                return ResponseEntity.ok(new ApiResponse("success"));
+            }
+            return ResponseEntity.ok(new ApiResponse("error"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(new ApiResponse("error"));
+        }
+    }
 }

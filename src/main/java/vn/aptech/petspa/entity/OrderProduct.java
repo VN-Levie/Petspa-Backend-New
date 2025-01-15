@@ -9,12 +9,16 @@ import vn.aptech.petspa.util.GoodsType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "order_products")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderProduct extends BaseEntity {
+    
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;

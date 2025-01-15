@@ -84,6 +84,9 @@ public class OrderService {
     private PetTagRepository petTagRepository;
 
     @Autowired
+    private OrderProductRepository orderProductRepository;
+
+    @Autowired
     private FileService fileService;
 
     @Transactional(readOnly = true)
@@ -130,8 +133,6 @@ public class OrderService {
                     // petTag.getName());
                     // }
 
-                    
-
                     OrderProduct orderProduct = new OrderProduct();
                     orderProduct.setOrder(newOrder);
                     orderProduct.setGoodsType(GoodsType.SHOP);
@@ -139,6 +140,7 @@ public class OrderService {
                     orderProduct.setQuantity(cI.getQuantity());
                     orderProduct.setPrice(petTag.getPrice());
                     orderProducts.add(orderProduct);
+                    // orderProductRepository.save(orderProduct);
                 }
                 break;
             case HOTEL:
@@ -151,19 +153,22 @@ public class OrderService {
                 throw new IllegalArgumentException("Cannot process order for goods type " + orderDTO.getGoodsType());
         }
 
-        newOrder.setStatus(OrderStatusType.PENDING);
-        orderRepository.save(newOrder);
-
         PaymentStatus paymentStatus = new PaymentStatus();
         paymentStatus.setOrder(newOrder);
         paymentStatus.setStatus(PaymentStatusType.PENDING);
         paymentStatus.setPaymentType(orderDTO.getPaymentMethod());
-        paymentStatusRepository.save(paymentStatus);
+        // paymentStatusRepository.save(paymentStatus);
 
         DeliveryStatus deliveryStatus = new DeliveryStatus();
         deliveryStatus.setOrder(newOrder);
         deliveryStatus.setStatus(DeliveryStatusType.PENDING);
-        deliveryStatusRepository.save(deliveryStatus);
+        // deliveryStatusRepository.save(deliveryStatus);
+
+        newOrder.setOrderProducts(orderProducts);
+        newOrder.setPaymentStatuses(List.of(paymentStatus));
+        newOrder.setDeliveryStatuses(List.of(deliveryStatus));
+        newOrder.setStatus(OrderStatusType.PENDING);
+        orderRepository.save(newOrder);
         return newOrder;
     }
 
@@ -181,7 +186,7 @@ public class OrderService {
             orderProduct.setQuantity(cI.getQuantity());
             orderProduct.setPrice(shopProduct.getPrice());
             orderProducts.add(orderProduct);
-
+            // orderProductRepository.save(orderProduct);
             shopProduct.setQuantity(shopProduct.getQuantity() - cI.getQuantity());
             shopProductRepository.save(shopProduct);
         }
@@ -244,7 +249,7 @@ public class OrderService {
             orderProduct.setQuantity(cI.getQuantity());
             orderProduct.setPrice(spaProduct.getPrice());
             orderProducts.add(orderProduct);
-
+            // orderProductRepository.save(orderProduct);
         }
         // Tìm lịch spa theo ngày và khung giờ hiện tại
         SpaServiceSchedule schedule = spaServiceScheduleRepository.findByDateAndTime(
@@ -329,7 +334,7 @@ public class OrderService {
             roomDetail.setStatus(OrderStatusType.PENDING);
 
             room.getRoomDetails().add(roomDetail);
-
+            petHotelRoomDetailRepository.save(roomDetail);
             OrderProduct orderProduct = new OrderProduct();
             orderProduct.setOrder(order);
             orderProduct.setGoodsType(GoodsType.HOTEL);
@@ -337,6 +342,7 @@ public class OrderService {
             orderProduct.setQuantity(cI.getQuantity());
             orderProduct.setPrice(room.getPrice());
             orderProducts.add(orderProduct);
+            // orderProductRepository.save(orderProduct);
         }
     }
 
