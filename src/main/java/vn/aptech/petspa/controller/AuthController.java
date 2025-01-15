@@ -129,7 +129,7 @@ public class AuthController {
             userDTO.setVerified(user.isVerified());
             userDTO.setToken(jwtToken);
             userDTO.setRefreshToken(refreshToken);
-
+            userDTO.setRole(user.getRoles().stream().findFirst().orElse("USER"));
             ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Login successfully!", userDTO);
             return ResponseEntity.ok(response);
 
@@ -175,7 +175,7 @@ public class AuthController {
                 userDTO.setVerified(user.isVerified());
                 userDTO.setToken(jwtToken);
                 userDTO.setRefreshToken(refreshToken);
-
+                userDTO.setRole(user.getRoles().stream().findFirst().orElse("USER"));
                 ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Login successfully!", userDTO);
                 return ResponseEntity.ok(response);
             }
@@ -218,7 +218,7 @@ public class AuthController {
                 userDTO.setVerified(user.isVerified());
                 userDTO.setToken(jwtToken);
                 userDTO.setRefreshToken(refreshToken);
-
+                userDTO.setRole(user.getRoles().stream().findFirst().orElse("USER"));
                 ApiResponse response = new ApiResponse(ApiResponse.STATUS_OK, "Token refreshed successfully!", userDTO);
                 return ResponseEntity.ok(response);
             } else {
