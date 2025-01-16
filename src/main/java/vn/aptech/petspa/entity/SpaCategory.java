@@ -9,6 +9,8 @@ import lombok.Builder;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 @Entity
 @Table(name = "spa_categories")
 @Data
@@ -27,6 +29,7 @@ public class SpaCategory extends BaseEntity {
 
     // Liên kết với bảng SpaProduct
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<SpaProduct> products;
 
     // Constructor với hai tham số (name, description)

@@ -38,23 +38,29 @@ public interface SpaProductRepository extends JpaRepository<SpaProduct, Long> {
 
     // Long id, String name, BigDecimal price, String imageUrl, Long category,
     // String description
-    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p.id, p.name, p.price, p.imageUrl, p.category.id, p.description) FROM SpaProduct p WHERE p.category.id = :id AND p.deleted = false")
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p.id, p.name, p.price, p.imageUrl, p.category.id, p.description) FROM SpaProduct p WHERE p.category.id = :id AND p.deleted = false AND p.category.deleted = false")
     Optional<List<SpaProductDTO>> findByCategoryId(Long id);
 
-    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p.id, p.name, p.price, p.imageUrl, p.category.id, p.description) FROM SpaProduct p WHERE p.id = :id AND p.deleted = false")
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p.id, p.name, p.price, p.imageUrl, p.category.id, p.description) FROM SpaProduct p WHERE p.id = :id AND p.deleted = false AND p.category.deleted = false")
     Optional<SpaProductDTO> findByIdAndDeletedFalse(Long id);
 
-    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.name LIKE CONCAT('%', :name, '%') AND p.deleted = false")
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.name LIKE CONCAT('%', :name, '%') AND p.deleted = false AND p.category.deleted = false")
     Page<SpaProductDTO> findByName(String name, Pageable pageable);
+    
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.name LIKE CONCAT('%', :name, '%') ")
+    Page<SpaProductDTO> findByNameAdmin(String name, Pageable pageable);
 
-    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.category.id = :categoryId AND p.deleted = false")
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.category.id = :categoryId AND p.deleted = false AND p.category.deleted = false")
     Page<SpaProductDTO> findByCategoryId(Long categoryId, Pageable pageable);
+    
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.category.id = :categoryId")
+    Page<SpaProductDTO> findByCategoryIdAdmin(Long categoryId, Pageable pageable);
 
-    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.name LIKE CONCAT('%', :name, '%') AND p.category.id = :categoryId AND p.deleted = false")
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.name LIKE CONCAT('%', :name, '%') AND p.category.id = :categoryId AND p.deleted = false AND p.category.deleted = false")
     Page<SpaProductDTO> findByNameAndCategoryId(String name, Long categoryId, Pageable pageable);
 
-    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.deleted = false")
-    Page<SpaProductDTO> findAllUndeleted(Pageable pageable);
+    @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.name LIKE CONCAT('%', :name, '%') AND p.category.id = :categoryId")
+    Page<SpaProductDTO> findByNameAndCategoryIdAdmin(String name, Long categoryId, Pageable pageable);
 
     @Query("SELECT new vn.aptech.petspa.dto.SpaProductDTO(p) FROM SpaProduct p WHERE p.deleted = true")
     Page<SpaProductDTO> findAllDeleted(Pageable pageable);
@@ -66,4 +72,10 @@ public interface SpaProductRepository extends JpaRepository<SpaProduct, Long> {
     @Transactional
     @Query("UPDATE SpaProduct p SET p.deleted = true WHERE p.id = :id")
     void softDelete(Long id);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE SpaProduct p SET p.deleted = false WHERE p.id = :id")
+    void unDelete(Long id);
+
 }

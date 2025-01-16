@@ -86,10 +86,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:3000"); // Origin của frontend
+        configuration.addAllowedOrigin("*"); // Origin của frontend
         configuration.addAllowedMethod("*"); // Tất cả method: GET, POST, PUT, DELETE, OPTIONS
         configuration.addAllowedHeader("*"); // Tất cả headers
-        configuration.setAllowCredentials(true); // Hỗ trợ gửi cookie/xác thực
+        // configuration.setAllowCredentials(true); // Hỗ trợ gửi cookie/xác thực
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration); // Áp dụng CORS cho tất cả endpoint
         return source;

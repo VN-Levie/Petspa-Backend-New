@@ -22,6 +22,7 @@ import vn.aptech.petspa.dto.SpaProductDTO;
 import vn.aptech.petspa.service.SpaService;
 import vn.aptech.petspa.util.ApiResponse;
 import vn.aptech.petspa.util.PagedApiResponse;
+import vn.aptech.petspa.util.ZDebug;
 
 @RestController
 @RequestMapping("/api/admin/spa-product")
@@ -84,7 +85,7 @@ public class AdminSpaController {
 
         ObjectMapper objectMapper = new ObjectMapper();
         SpaProductDTO productDTO = objectMapper.readValue(productDTOJson, SpaProductDTO.class);
-
+        ZDebug.gI().ZigDebug("productDTO: " + productDTO);
         if (file != null && !file.isEmpty()) {
             spaService.editSpaProductWithImage(null, productDTO, file);
         } else {
@@ -97,11 +98,14 @@ public class AdminSpaController {
     @PostMapping("/delete")
     public ResponseEntity<ApiResponse> deleteSpaProduct(
             @RequestHeader("Authorization") String token,
-            @RequestBody SpaProductDTO productDTO) {
+            @RequestParam("productDTO") String productDTOJson) throws JsonProcessingException {
 
-        spaService.deleteSpaProduct(null, productDTO);
+        ObjectMapper objectMapper = new ObjectMapper();
+        SpaProductDTO productDTO = objectMapper.readValue(productDTOJson, SpaProductDTO.class);
 
-        return ResponseEntity.ok(new ApiResponse("Delete product successfully"));
+        int del = spaService.deleteSpaProduct(null, productDTO);
+
+        return ResponseEntity.ok(new ApiResponse(del == 1 ? "Hide product successfully" : "Show product successfully"));
     }
 
     // Get all categories
@@ -111,29 +115,29 @@ public class AdminSpaController {
     }
 
     // add category
-    @PostMapping("/category")
+    @PostMapping(value = "/category/add", consumes = { "multipart/form-data" })
     public ResponseEntity<ApiResponse> addCategory(
-            @RequestHeader("Authorization") String token,
+            @RequestParam(value = "file", required = true) MultipartFile file,
             @RequestParam("categoryDTO") String categoryJson) throws JsonProcessingException {
 
         ObjectMapper objectMapper = new ObjectMapper();
         SpaCategoriesDTO categoryDTO = objectMapper.readValue(categoryJson, SpaCategoriesDTO.class);
 
-        spaService.addCategory(categoryDTO);
+        spaService.addCategory(categoryDTO, file);
 
         return ResponseEntity.ok(new ApiResponse("Add category successfully"));
     }
 
     // update category
-    @PostMapping("/category/update")
+    @PostMapping(value = "/category/update", consumes = { "multipart/form-data" })
     public ResponseEntity<ApiResponse> updateCategory(
-            @RequestHeader("Authorization") String token,
+            @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam("categoryDTO") String categoryJson) throws JsonProcessingException {
 
         ObjectMapper objectMapper = new ObjectMapper();
         SpaCategoriesDTO categoryDTO = objectMapper.readValue(categoryJson, SpaCategoriesDTO.class);
 
-        spaService.updateCategory(categoryDTO);
+        spaService.updateCategory(categoryDTO, file);
 
         return ResponseEntity.ok(new ApiResponse("Update category successfully"));
     }
@@ -141,11 +145,13 @@ public class AdminSpaController {
     // delete category
     @PostMapping("/category/delete")
     public ResponseEntity<ApiResponse> deleteCategory(
-            @RequestHeader("Authorization") String token,
-            @RequestParam("categoryId") Long categoryId) {
+            @RequestParam("categoryDTO") String categoryJson) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        SpaCategoriesDTO categoryDTO = objectMapper.readValue(categoryJson, SpaCategoriesDTO.class);
 
-        spaService.deleteCategory(categoryId);
-        return ResponseEntity.ok(new ApiResponse("Delete category successfully"));
+        int del = spaService.deleteCategory(categoryDTO.getId());
+        return ResponseEntity
+                .ok(new ApiResponse(del == 1 ? "Delete category successfully" : "Show category successfully"));
     }
 
 }

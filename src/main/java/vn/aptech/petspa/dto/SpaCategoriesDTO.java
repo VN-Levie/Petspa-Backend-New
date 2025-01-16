@@ -17,6 +17,7 @@ public class SpaCategoriesDTO {
     private String description;
     private String imageUrl;
     private Optional<List<SpaProductDTO>> items = Optional.empty();
+    private boolean deleted;
 
     public SpaCategoriesDTO(Long id, String name, String description, String imageUrl) {
         this.id = id;
@@ -30,5 +31,6 @@ public class SpaCategoriesDTO {
         this.name = spaCategory.getName();
         this.description = spaCategory.getDescription();
         this.imageUrl = spaCategory.getImageUrl();
+        this.deleted = spaCategory.getDeleted();
     }
 }

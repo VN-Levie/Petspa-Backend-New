@@ -10,6 +10,8 @@ import vn.aptech.petspa.util.SpaProductStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 @Entity
 @Table(name = "spa_products")
 @Data
@@ -39,6 +41,7 @@ public class SpaProduct extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
+    @JsonBackReference
     private SpaCategory category;
 
  

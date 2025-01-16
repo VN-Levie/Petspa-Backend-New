@@ -22,6 +22,7 @@ import vn.aptech.petspa.exception.NotFoundException;
 import vn.aptech.petspa.repository.SpaCategoryRepository;
 import vn.aptech.petspa.repository.SpaProductRepository;
 import vn.aptech.petspa.util.JwtUtil;
+import vn.aptech.petspa.util.ZDebug;
 
 @Service
 public class SpaService {
@@ -39,7 +40,8 @@ public class SpaService {
     private JwtUtil jwtUtil;
 
     public List<SpaCategoriesDTO> getAllServicesDTO() {
-        return spaCategoryRepository.findAll().stream().map(spaCategory -> {
+        return spaCategoryRepository.findAllUndeleted().stream().map(spaCategory -> {
+
             SpaCategoriesDTO spaCategoriesDTO = new SpaCategoriesDTO();
             spaCategoriesDTO.setId(spaCategory.getId());
             spaCategoriesDTO.setName(spaCategory.getName());
@@ -69,13 +71,13 @@ public class SpaService {
     @Transactional(readOnly = true)
     public Page<SpaProductDTO> getSpaProducts(String name, Long categoryId, Pageable pageable) {
         if (name != null && categoryId != null) {
-            return spaProductRepository.findByNameAndCategoryId(name, categoryId, pageable);
+            return spaProductRepository.findByNameAndCategoryIdAdmin(name, categoryId, pageable);
         } else if (name != null) {
-            return spaProductRepository.findByName(name, pageable);
+            return spaProductRepository.findByNameAdmin(name, pageable);
         } else if (categoryId != null) {
-            return spaProductRepository.findByCategoryId(categoryId, pageable);
+            return spaProductRepository.findByCategoryIdAdmin(categoryId, pageable);
         } else {
-            return spaProductRepository.findAllUndeleted(pageable);
+            return spaProductRepository.findAllAdmin(pageable);
         }
     }
 
@@ -131,8 +133,9 @@ public class SpaService {
             product.setPrice(productDTO.getPrice());
             product.setImageUrl(fileUrl);
             product.setDescription(productDTO.getDescription());
-            product.setCategory(spaCategoryRepository.findById(productDTO.getCategory())
-                    .orElseThrow(() -> new IllegalArgumentException("Category not found")));
+            SpaCategory category = spaCategoryRepository.findById(productDTO.getCategory())
+                    .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+            product.setCategory(category);
 
             spaProductRepository.save(product);
 
@@ -145,24 +148,48 @@ public class SpaService {
 
     @Transactional
     public void editSpaProductWithoutImage(User user, SpaProductDTO productDTO) {
-        SpaProduct product = spaProductRepository.findById(productDTO.getId())
-                .orElseThrow(() -> new NotFoundException("Product not found"));
+        if (productDTO == null || productDTO.getId() == null) {
+            throw new IllegalArgumentException("Product data or ID must not be null.");
+        }
+        try {
 
-        product.setName(productDTO.getName());
-        product.setPrice(productDTO.getPrice());
-        product.setDescription(productDTO.getDescription());
-        product.setCategory(spaCategoryRepository.findById(productDTO.getCategory())
-                .orElseThrow(() -> new NotFoundException("Category not found")));
+            SpaProduct product = spaProductRepository.findById(productDTO.getId())
+                    .orElseThrow(() -> new NotFoundException("Product not found for ID: " + productDTO.getId()));
 
-        spaProductRepository.save(product);
+            // Cập nhật thông tin
+            product.setName(productDTO.getName());
+            product.setPrice(productDTO.getPrice());
+            product.setDescription(productDTO.getDescription());
+
+            // Tìm category
+            SpaCategory category = spaCategoryRepository.findById(productDTO.getCategory())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Category not found for ID: " + productDTO.getCategory()));
+            ZDebug.gI().ZigDebug("Tìm thấy Category ");
+            product.setCategory(category);
+
+            // Lưu sản phẩm vào database
+            spaProductRepository.save(product);
+        } catch (NotFoundException | IllegalArgumentException e) {
+            // Xử lý ngoại lệ và ghi log
+            ZDebug.gI().ZigDebug("Error updating product: " + e.getMessage());
+            throw e; // Ném lại ngoại lệ để hệ thống xử lý rollback
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Unexpected error occurred: " + e.getMessage());
+        }
     }
 
     @Transactional
-    public void deleteSpaProduct(User user, SpaProductDTO productDTO) {
+    public int deleteSpaProduct(User user, SpaProductDTO productDTO) {
         SpaProduct product = spaProductRepository.findById(productDTO.getId())
                 .orElseThrow(() -> new NotFoundException("Product not found"));
-
+        if (product.getDeleted()) {
+            spaProductRepository.unDelete(product.getId());
+            return 0;
+        }
         spaProductRepository.softDelete(product.getId());
+        return 1;
     }
 
     public SpaProductDTO getSpaProductById(Long productId) {
@@ -189,46 +216,94 @@ public class SpaService {
     }
 
     // add category
-    public void addCategory(SpaCategoriesDTO categoryDTO) {
-        // check if category already exists
-        if (spaCategoryRepository.findByName(categoryDTO.getName()).isPresent()) {
-            throw new IllegalArgumentException("Category already exists");
-        }
-        SpaCategory category = new SpaCategory();
-        category.setName(categoryDTO.getName());
-        category.setDescription(categoryDTO.getDescription());
+    public void addCategory(SpaCategoriesDTO categoryDTO, MultipartFile file) {
+        // check null name
+        try {
+            if (categoryDTO.getName() == null) {
+                throw new IllegalArgumentException("Category name is required");
+            }
 
-        spaCategoryRepository.save(category);
+            // check null description
+            if (categoryDTO.getDescription() == null) {
+                throw new IllegalArgumentException("Category description is required");
+            }
+
+            if (!fileService.isImageSize(file.getSize())) {
+                throw new IllegalArgumentException("File size exceeds the allowed limit.");
+            }
+            if (!fileService.isImage(file.getInputStream(), file.getOriginalFilename())) {
+                throw new IllegalArgumentException("Invalid image format.");
+            }
+
+            String uploadDir = "shop-categories";
+            String fileUrl = fileService.uploadFile(file, uploadDir);
+
+            // check if category already exists
+            if (spaCategoryRepository.findByName(categoryDTO.getName()).isPresent()) {
+                throw new IllegalArgumentException("Category already exists");
+            }
+            SpaCategory category = new SpaCategory();
+            category.setName(categoryDTO.getName());
+            category.setImageUrl(fileUrl);
+            category.setDescription(categoryDTO.getDescription());
+
+            spaCategoryRepository.save(category);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed to save file: " + e.getMessage());
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
     // update category
-    public void updateCategory(SpaCategoriesDTO categoryDTO) {
+    public void updateCategory(SpaCategoriesDTO categoryDTO, MultipartFile file) {
 
         // Tìm danh mục hiện tại
         SpaCategory category = spaCategoryRepository.findById(categoryDTO.getId())
                 .orElseThrow(() -> new NotFoundException("Category not found"));
-    
+
         // Kiểm tra trùng lặp tên danh mục, loại trừ danh mục hiện tại
         spaCategoryRepository.findByName(categoryDTO.getName())
                 .filter(existingCategory -> !existingCategory.getId().equals(category.getId()))
                 .ifPresent(existingCategory -> {
                     throw new IllegalArgumentException("Category already exists");
                 });
-    
+        if (file != null && !file.isEmpty()) {
+            try {
+                if (!fileService.isImageSize(file.getSize())) {
+                    throw new IllegalArgumentException("File size exceeds the allowed limit.");
+                }
+                if (!fileService.isImage(file.getInputStream(), file.getOriginalFilename())) {
+                    throw new IllegalArgumentException("Invalid image format.");
+                }
+
+                String uploadDir = "shop-categories";
+                String fileUrl = fileService.uploadFile(file, uploadDir);
+                category.setImageUrl(fileUrl);
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Failed to save file: " + e.getMessage());
+            } catch (Exception e) {
+                throw new IllegalArgumentException(e.getMessage());
+            }
+        }
         // Cập nhật danh mục
         category.setName(categoryDTO.getName());
         category.setDescription(categoryDTO.getDescription());
-    
+
         // Lưu lại thay đổi
         spaCategoryRepository.save(category);
     }
 
     // delete category
-    public void deleteCategory(Long categoryId) {
+    public int deleteCategory(Long categoryId) {
         SpaCategory category = spaCategoryRepository.findById(categoryId)
                 .orElseThrow(() -> new NotFoundException("Category not found"));
-
+        if (category.getDeleted()) {
+            spaCategoryRepository.unDelete(category.getId());
+            return 0;
+        }
         spaCategoryRepository.softDelete(category.getId());
+        return 1;
     }
 
 }

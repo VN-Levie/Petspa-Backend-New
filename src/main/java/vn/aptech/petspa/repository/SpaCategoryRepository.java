@@ -35,6 +35,12 @@ public interface SpaCategoryRepository extends JpaRepository<SpaCategory, Long> 
     @Query("UPDATE SpaCategory p SET p.deleted = true WHERE p.id = :id")
     void softDelete(Long id);
 
+    // undelete
+    @Modifying
+    @Transactional
+    @Query("UPDATE SpaCategory p SET p.deleted = false WHERE p.id = :id")
+    void unDelete(Long id);
+
     // count
     @Query("SELECT COUNT(p) FROM SpaCategory p WHERE p.deleted = false")
     Long countAll();
