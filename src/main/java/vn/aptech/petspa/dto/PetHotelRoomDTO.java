@@ -14,6 +14,6 @@ public class PetHotelRoomDTO {
     private String name; // Tên phòng
     private String description; // Mô tả phòng
     private Double price; // Giá phòng
-    private PetHotelRoomTypeDTO roomType; // Loại phòng
+    private Long roomTypeId; // Loại phòng
     private List<PetHotelRoomDetailDTO> bookingDetails; // Chi tiết đặt phòng
 }
