@@ -1,6 +1,8 @@
 package vn.aptech.petspa.dto;
 
-import java.sql.Date;
+
+
+import java.util.Date;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

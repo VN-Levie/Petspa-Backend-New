@@ -6,11 +6,15 @@ import vn.aptech.petspa.entity.Order;
 import vn.aptech.petspa.util.GoodsType;
 import vn.aptech.petspa.util.PaymentType;
 
+
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.lang.Nullable;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Data
 @NoArgsConstructor
@@ -45,16 +49,20 @@ public class OrderRequestDTO {
     private GoodsType goodsType; // spa, shop, hotel
 
     @Nullable
-    private LocalDate date; // Ngày áp dụng lịch
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+7") // Định dạng ngày
+    private Date date;
 
     @Nullable
-    private LocalDate endDate; // Ngày check-out hotel
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+7") // Định dạng ngày
+    private Date endDate; // Ngày check-out hotel
 
     @Nullable
-    private LocalTime startTime; // Giờ bắt đầu
+    @JsonFormat(pattern = "HH:mm", timezone = "GMT+7") // Định dạng giờ
+    private Date startTime;
 
     @Nullable
-    private LocalTime endTime; // Giờ kết thúc
+    @JsonFormat(pattern = "HH:mm", timezone = "GMT+7") // Định dạng giờ
+    private Date endTime; // Giờ kết thúc
 
     public Order toEntity() {
         Order order = new Order();

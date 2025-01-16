@@ -111,6 +111,7 @@ public class AppSettingsService {
 
     public void validateWorkingConditions(LocalDate date, LocalTime startTime) {
         try {
+            ZDebug.gI().ZigDebug("Validating working conditions for date " + date + " and time " + startTime);
             if (isRestDay(date)) {
                 throw new IllegalArgumentException(
                         "Sorry, we are closed on this day. For more information, please contact us.");
@@ -121,7 +122,9 @@ public class AppSettingsService {
                         "Sorry, we cannot accept orders at this selected time. For more information, please contact us.");
             }
         } catch (Exception e) {
-            throw new IllegalArgumentException("Error validating working conditions", e);
+            ZDebug.gI().logException("Error validating working conditions", e);
+            e.printStackTrace();
+            throw new IllegalArgumentException(e);
         }
     }
 
@@ -204,24 +207,64 @@ public class AppSettingsService {
             if (weeklyWorkingHours == null || weeklyWorkingHours.isEmpty()) {
                 throw new IllegalArgumentException("Weekly working hours must not be null or empty.");
             }
-    
+
             // Chuyển đổi danh sách thành JSON
             String updatedValue = objectMapper.writeValueAsString(weeklyWorkingHours);
-    
+
             // Lấy cấu hình hiện tại từ cơ sở dữ liệu
             Optional<AppSettings> workingHoursSetting = appSettingsRepository.findByKey("weeklyWorkingHours");
-    
+
             // Cập nhật giá trị mới
             AppSettings appSettings = workingHoursSetting.orElse(new AppSettings());
             appSettings.setKey("weeklyWorkingHours");
             appSettings.setValue(updatedValue);
-    
+
             // Lưu lại vào cơ sở dữ liệu
             appSettingsRepository.save(appSettings);
         } catch (Exception e) {
             throw new IllegalArgumentException("Error updating weekly working hours: " + e.getMessage(), e);
         }
     }
-    
+
+    public List<Map<String, Object>> getAvailableTimes(String date) throws JsonProcessingException {
+        LocalDate selectedDate = LocalDate.parse(date);
+        DayOfWeek dayOfWeek = selectedDate.getDayOfWeek();
+
+        // Lấy cấu hình giờ làm việc từ AppSettings
+        Optional<AppSettings> workingHoursSetting = appSettingsRepository.findByKey("weeklyWorkingHours");
+        if (workingHoursSetting.isPresent() && workingHoursSetting.get().getValue() != null) {
+            List<Map<String, String>> weeklyWorkingHours = objectMapper.readValue(
+                    workingHoursSetting.get().getValue(),
+                    new TypeReference<List<Map<String, String>>>() {
+                    });
+
+            // Tìm giờ làm việc của ngày được chọn
+            for (Map<String, String> workingHour : weeklyWorkingHours) {
+                if (dayOfWeek.name().equals(workingHour.get("dayOfWeek"))) {
+                    // Kiểm tra nếu là ngày nghỉ
+                    boolean isRestDay = Boolean.parseBoolean(workingHour.getOrDefault("isRestDay", "false"));
+                    if (isRestDay) {
+                        return new ArrayList<>(); // Không có giờ làm việc
+                    }
+
+                    // Tạo danh sách giờ
+                    LocalTime openTime = LocalTime.parse(workingHour.get("openTime"));
+                    LocalTime closeTime = LocalTime.parse(workingHour.get("closeTime"));
+
+                    List<Map<String, Object>> times = new ArrayList<>();
+                    for (LocalTime time = openTime; !time.isAfter(closeTime); time = time.plusMinutes(30)) {
+                        Map<String, Object> timeSlot = new HashMap<>();
+                        timeSlot.put("time", time.toString());
+                        timeSlot.put("isAvailable", true); // Hoặc thêm logic kiểm tra nếu giờ đã được đặt
+                        times.add(timeSlot);
+                    }
+
+                    return times;
+                }
+            }
+        }
+
+        throw new IllegalArgumentException("No working hours found for the selected date.");
+    }
 
 }

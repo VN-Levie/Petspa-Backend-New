@@ -104,7 +104,9 @@ public class UserOrderController {
         ZDebug.gI().ZigDebug(parsedorderDTO.toString());
 
         Order order = orderService.createOrder(parsedorderDTO);
-        return ResponseEntity.ok(new ApiResponse("Create order successfully", order));
+        Order savedOrder = new Order();
+        savedOrder.setId(order.getId());
+        return ResponseEntity.ok(new ApiResponse("Create order successfully", savedOrder));
     }
 
     // order detail

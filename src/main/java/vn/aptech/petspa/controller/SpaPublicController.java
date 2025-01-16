@@ -1,6 +1,7 @@
 package vn.aptech.petspa.controller;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import vn.aptech.petspa.dto.SpaCategoriesDTO;
 import vn.aptech.petspa.dto.SpaProductDTO;
+import vn.aptech.petspa.service.AppSettingsService;
 import vn.aptech.petspa.service.CustomUserDetailsService;
 import vn.aptech.petspa.service.SpaService;
 import vn.aptech.petspa.util.ApiResponse;
@@ -70,6 +72,9 @@ public class SpaPublicController {
 
     @Autowired
     private SpaService spaService;
+
+    @Autowired
+    private AppSettingsService appSettingService;
 
     @Autowired
     private CustomUserDetailsService customUserDetailsService;
@@ -154,6 +159,16 @@ public class SpaPublicController {
         } catch (Exception e) {
             e.printStackTrace();
             return ApiResponse.badRequest(e.getMessage());
+        }
+    }
+
+    @GetMapping("/get-available-times")
+    public ResponseEntity<ApiResponse> getAvailableTimes(@RequestParam("date") String date) {
+        try {
+            List<Map<String, Object>> availableTimes = appSettingService.getAvailableTimes(date);
+            return ResponseEntity.ok(new ApiResponse("Successfully retrieved available times", availableTimes));
+        } catch (Exception e) {
+            return ApiResponse.badRequest("Error fetching available times: " + e.getMessage());
         }
     }
 
