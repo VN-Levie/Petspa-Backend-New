@@ -46,6 +46,89 @@ public class AdminHotelController {
         PetHotelRoomDTO categoryDTO = objectMapper.readValue(hotelRoomJson, PetHotelRoomDTO.class);
 
         hotelService.addRoom(categoryDTO);
-        return ResponseEntity.ok(new ApiResponse("Add category successfully"));
+        return ResponseEntity.ok(new ApiResponse("Add room successfully"));
     }
+
+    // edit room
+    @PostMapping(value = "/room/edit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse> editRoom(
+            @RequestParam("petHotelRoomDTO") String hotelRoomJson) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        PetHotelRoomDTO categoryDTO = objectMapper.readValue(hotelRoomJson, PetHotelRoomDTO.class);
+
+        hotelService.editRoom(categoryDTO);
+        return ResponseEntity.ok(new ApiResponse("Edit room successfully"));
+    }
+
+    // delete room
+    @PostMapping(value = "/room/delete", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse> deleteRoom(
+            @RequestParam("id") Long id) {
+        int del = hotelService.deleteRoom(id);
+        return ResponseEntity.ok(new ApiResponse(del == 0 ? "Hide room successfully" : "Show room successfully"));
+    }
+
+    // get room by id
+    @GetMapping(value = "/room/get", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse> getRoom(
+            @RequestParam("id") Long id) {
+        PetHotelRoomDTO room = hotelService.getRoom(id);
+        return ResponseEntity.ok(new ApiResponse("Get root successfully", room));
+    }
+
+    //get room type by id
+    @GetMapping(value = "/roomType/get", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse> getRoomType(
+            @RequestParam("id") Long id) {
+        PetHotelRoomTypeDTO roomType = hotelService.getRoomType(id);
+        return ResponseEntity.ok(new ApiResponse("Get room type successfully", roomType));
+    }
+
+    // get all room
+    @GetMapping(value = "/room/getAll", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse> getAllRoom() {
+        List<PetHotelRoomDTO> rooms = hotelService.getAllRoom();
+        return ResponseEntity.ok(new ApiResponse("Get all room successfully", rooms));
+    }
+
+    // get all room type
+    @GetMapping(value = "/roomType/getAll", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponse> getAllRoomType() {
+        List<PetHotelRoomTypeDTO> roomTypes = hotelService.getAllRoomType();
+        return ResponseEntity.ok(new ApiResponse("Get all room type successfully", roomTypes));
+    }
+
+    // add room type
+    @PostMapping(value = "/roomType/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse> addRoomType(
+            @RequestParam("petHotelRoomTypeDTO") String roomTypeJson) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        PetHotelRoomTypeDTO roomTypeDTO = objectMapper.readValue(roomTypeJson, PetHotelRoomTypeDTO.class);
+
+        hotelService.addRoomType(roomTypeDTO);
+        return ResponseEntity.ok(new ApiResponse("Add room type successfully"));
+    }
+
+    // edit room type
+    @PostMapping(value = "/roomType/edit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse> editRoomType(
+            @RequestParam("petHotelRoomTypeDTO") String roomTypeJson) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        PetHotelRoomTypeDTO roomTypeDTO = objectMapper.readValue(roomTypeJson, PetHotelRoomTypeDTO.class);
+
+        hotelService.editRoomType(roomTypeDTO);
+        return ResponseEntity.ok(new ApiResponse("Edit room type successfully"));
+    }
+
+    // delete room type
+    @PostMapping(value = "/roomType/delete", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse> deleteRoomType(
+            @RequestParam("petHotelRoomTypeDTO") String categoryJson) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        PetHotelRoomTypeDTO categoryDTO = objectMapper.readValue(categoryJson, PetHotelRoomTypeDTO.class);
+        int del = hotelService.deleteRoomType(categoryDTO.getId());
+        return ResponseEntity
+                .ok(new ApiResponse(del == 0 ? "Hide room type successfully" : "Show room type successfully"));
+    }
+
 }

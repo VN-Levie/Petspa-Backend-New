@@ -10,12 +10,10 @@ public class PetHotelMapper {
     public static PetHotelDTO toDto(PetHotel petHotel) {
         return new PetHotelDTO(
                 petHotel.getId(),
-                petHotel.getRooms() != null ? 
-                    petHotel.getRooms().stream()
+                petHotel.getRooms() != null ? petHotel.getRooms().stream()
                         .map(PetHotelMapper::toDto)
-                        .collect(Collectors.toList()) 
-                    : null
-        );
+                        .collect(Collectors.toList())
+                        : null);
     }
 
     public static PetHotelRoomDTO toDto(PetHotelRoom petHotelRoom) {
@@ -25,20 +23,19 @@ public class PetHotelMapper {
                 petHotelRoom.getDescription(),
                 petHotelRoom.getPrice(),
                 toDto(petHotelRoom.getRoomType()),
-                petHotelRoom.getRoomDetails() != null ? 
-                    petHotelRoom.getRoomDetails().stream()
+                petHotelRoom.getRoomDetails() != null ? petHotelRoom.getRoomDetails().stream()
                         .map(PetHotelMapper::toDto)
-                        .collect(Collectors.toList()) 
-                    : null
-        );
+                        .collect(Collectors.toList())
+                        : null,
+                petHotelRoom.getDeleted());
     }
 
     public static PetHotelRoomTypeDTO toDto(PetHotelRoomType roomType) {
         return new PetHotelRoomTypeDTO(
                 roomType.getId(),
                 roomType.getName(),
-                roomType.getDescription()
-        );
+                roomType.getDescription(),
+                roomType.getDeleted());
     }
 
     public static PetHotelRoomDetailDTO toDto(PetHotelRoomDetail roomDetail) {
@@ -47,7 +44,6 @@ public class PetHotelMapper {
                 roomDetail.getCheckInTime(),
                 roomDetail.getCheckOutTime(),
                 roomDetail.getStatus() != null ? roomDetail.getStatus().name() : null,
-                roomDetail.getPet() != null ? roomDetail.getPet().getId() : null
-        );
+                roomDetail.getPet() != null ? roomDetail.getPet().getId() : null);
     }
 }

@@ -11,4 +11,5 @@ public class PetHotelRoomTypeDTO {
     private Long id; // ID loại phòng
     private String name; // Tên loại phòng
     private String description; // Mô tả loại phòng
+    private Boolean deleted; // Đánh dấu xóa
 }

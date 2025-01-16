@@ -377,9 +377,9 @@ public class OrderService {
                     LocalTime.of(12, 0));
             roomDetail.setCheckOutTime(checkOutTime);
             roomDetail.setStatus(OrderStatusType.PENDING);
-
+            room.setRoomDetails(new HashSet<PetHotelRoomDetail>());
             room.getRoomDetails().add(roomDetail);
-            petHotelRoomDetailRepository.save(roomDetail);
+            
             OrderProduct orderProduct = new OrderProduct();
             orderProduct.setOrder(order);
             orderProduct.setGoodsType(GoodsType.HOTEL);
